@@ -1,0 +1,35 @@
+orchestrator:
+  version: "1.0"
+
+  global:
+    timeout_seconds: 1800
+    temp_dir: "/tmp/afss-orchestrator"
+    log_level: "info"
+    config_dir: "./configs"
+
+  resources:
+    max_parallel_scans: 2
+    memory_limit_percent: 80.0
+    cpu_limit_percent: 70.0
+    adaptive_throttling: true
+    snapshot_interval_seconds: 5
+    resource_check_interval_seconds: 10
+
+  execution:
+    mode: "resource_aware"
+    tool_priority:
+      gosec: 1
+      govulncheck: 2
+      semgrep: 3
+      trufflehog: 4
+      owasp-dep-check: 5
+    default_resource_limits:
+      max_memory_mb: 512
+      max_cpu_percent: 50.0
+      timeout_seconds: 300
+
+  output:
+    format: "json"
+    combine_results: true
+    save_intermediate: true
+    results_dir: "./results"
