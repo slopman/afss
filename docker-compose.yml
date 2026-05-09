@@ -1,0 +1,9 @@
+services:
+  orchestrator:
+    build: .
+    volumes:
+      - ${REPO_PATH}:/scan:ro
+      - ./results:/app/results
+    environment:
+      - SCAN_PATH=/scan
+    command: ["scan", "/scan"]

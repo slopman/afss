@@ -18,7 +18,7 @@ func TestFindingsProcessor(t *testing.T) {
 	processor := NewFindingsProcessor(config)
 
 	// Process findings
-	normalized, err := processor.Process(testData)
+	normalized, _, err := processor.Process(testData)
 	if err != nil {
 		t.Fatalf("Processing failed: %v", err)
 	}

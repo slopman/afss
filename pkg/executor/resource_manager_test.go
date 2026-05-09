@@ -63,25 +63,25 @@ func TestResourceManager_IOHeavy(t *testing.T) {
 
 	ctx := context.Background()
 
-	// Allocate 2 IO heavy tools (max is 2)
+	// IO-heavy tools share a semaphore with capacity 1 (see NewResourceManager).
 	r1, err := rm.AllocateResources(ctx, "semgrep", 0)
 	if err != nil {
 		t.Fatal(err)
 	}
-	r2, err := rm.AllocateResources(ctx, "trivy", 0)
-	if err != nil {
-		t.Fatal(err)
-	}
 
-	// 3rd IO heavy tool should block
 	ctxTimeout, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
 	defer cancel()
 
-	_, err = rm.AllocateResources(ctxTimeout, "owasp-dep-check", 0)
+	_, err = rm.AllocateResources(ctxTimeout, "trivy", 0)
 	if err == nil {
-		t.Error("Expected 3rd IO heavy tool to block")
+		t.Error("Expected 2nd IO heavy tool to block while first holds the IO slot")
 	}
 
 	r1()
+
+	r2, err := rm.AllocateResources(context.Background(), "trivy", 0)
+	if err != nil {
+		t.Fatalf("Second IO heavy tool should succeed after release: %v", err)
+	}
 	r2()
 }

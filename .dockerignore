@@ -1,0 +1,8 @@
+.git
+**/debug_results
+rundler
+test
+normalized
+FINDINGS_PROCESSOR_DESIGN.md
+RESOURCE_MANAGER_DESIGN.md
+*.json

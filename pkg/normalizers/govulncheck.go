@@ -3,7 +3,6 @@ package normalizers
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/security-scanner/afss-orchestrator/pkg/findings_processor"
 )

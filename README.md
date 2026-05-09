@@ -5,227 +5,101 @@
 ## 🎯 Overview
 
 AFSS Orchestrator is a smart orchestration layer that:
-- **Resource-Aware Execution**: Monitors system resources and adapts tool execution
-- **YAML Configuration**: Clean configuration management for all security tools
-- **Intelligent Scheduling**: Decides how many tools can run in parallel
-- **Profiling System**: Learns resource consumption patterns of tools
-- **Graceful Degradation**: Handles resource pressure and failures
+- **Docker-First Environment**: All security tools (Semgrep, Trivy, Gosec, etc.) are pre-installed in a consistent container.
+- **Resource-Aware Execution**: Monitors system resources and adapts tool execution to avoid freezing.
+- **Intelligent Scheduling**: Decides how many tools can run in parallel based on CPU/RAM weights.
+- **Unified Reporting**: Normalizes findings from diverse tools into a single, clean JSON/HTML report.
 
 ## 🏗️ Architecture
 
 ```
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   Agent/UI      │────│  Orchestrator    │────│ Security Tools  │
-│                 │    │                  │    │                 │
-│ - Commands      │    │ - Resource Mgmt  │    │ - Gosec         │
-│ - Config Mgmt   │    │ - Scheduling     │    │ - Semgrep       │
-│ - Results       │    │ - Monitoring     │    │ - TruffleHog    │
+│   Agent/UI      │────│  Orchestrator    │────│ Docker Container│
+│                 │    │ (Dockerized)     │    │                 │
+│ - Commands      │    │ - Resource Mgmt  │    │ - Gosec (Go)    │
+│ - Config Mgmt   │    │ - Scheduling     │    │ - TruffleHog v3 │
+│ - Results       │    │ - Normalization  │    │ - Semgrep, etc. │
 └─────────────────┘    └──────────────────┘    └─────────────────┘
-                              │
-                              ▼
-                       ┌──────────────────┐
-                       │   YAML Configs   │
-                       │                  │
-                       │ - orchestrator   │
-                       │ - tools/*        │
-                       │ - resource-limits│
-                       └──────────────────┘
 ```
 
-## 🚀 Quick Start
+## 🚀 Quick Start (Docker)
 
-### 1. Build
+This is the recommended way to run the orchestrator without worrying about local dependencies.
+
+### 1. Requirements
+- Docker & Docker-compose
+- At least 4GB RAM recommended
+
+### 2. Run Scan
+Provide the path to your project and run:
+
 ```bash
-make deps
-make build
+export REPO_PATH=/path/to/your/repo
+docker-compose up --build
 ```
 
-### 2. Initialize Configuration
+### 3. View Results
+- **HTML Report**: Open `results/report.html` in your browser.
+- **Actionable Findings**: Check `results/actionable_findings.json` for a deduplicated list.
+
+---
+
+## 🛠️ Usage (Local/Development)
+
+If you want to run it without Docker, you'll need Go 1.23+ and individual tools installed.
+
+### Build
 ```bash
-make config-init
+go build -o orchestrator ./cmd/orchestrator/*.go
 ```
 
-This creates:
-- `configs/orchestrator.yaml` - Main orchestrator settings
-- `configs/tools/` - Tool-specific configurations
-
-### 3. Test Resource Monitoring
+### Run
 ```bash
-make monitor
-```
-
-### 4. Run a Scan
-```bash
-./bin/orchestrator scan /path/to/your/project
+./orchestrator scan /path/to/repo
 ```
 
 ## 📋 Configuration
 
 ### Orchestrator Config (`configs/orchestrator.yaml`)
-```yaml
-orchestrator:
-  version: "1.0"
+Controls global limits and resource thresholds.
 
-  global:
-    timeout_seconds: 1800
-    temp_dir: "/tmp/afss-orchestrator"
-    log_level: "info"
+### Tool Configs (`configs/tools/*.yaml`)
+Enable/disable specific tools and adjust their resource "weight".
 
-  resources:
-    max_parallel_scans: 2
-    memory_limit_percent: 80
-    cpu_limit_percent: 70
-    adaptive_throttling: true
-
-  execution:
-    mode: "resource_aware"
-    tool_priority:
-      gosec: 1
-      semgrep: 2
-      trufflehog: 3
-```
-
-### Tool Config Example (`configs/tools/gosec.yaml`)
-```yaml
-tool: gosec
-enabled: true
-description: "Go static security analysis"
-
-resource_profile:
-  memory_peak_mb: 256
-  cpu_avg_percent: 50
-  expected_duration_seconds: 120
-
-cli:
-  severity: medium
-  confidence: medium
-  no_fail: true
-  quiet: true
-  output_format: json
-
-conditions:
-  - type: file_exists
-    pattern: "*.go"
-```
-
-## 🛠️ Commands
-
-### Scan Repository
-```bash
-orchestrator scan /path/to/repo
-```
-
-### Profile Tool Resource Usage
-```bash
-orchestrator profile gosec /path/to/go-repo
-```
-
-### Monitor System Resources
-```bash
-orchestrator monitor
-```
-
-### Configuration Management
-```bash
-orchestrator config init      # Create default configs
-orchestrator config validate  # Validate existing configs
-```
+---
 
 ## 🎯 Key Features
 
-### Resource-Aware Execution
-- **Pre-scan Assessment**: Evaluates system capacity before starting
-- **Runtime Monitoring**: Tracks CPU, memory, disk usage in real-time
-- **Adaptive Throttling**: Reduces parallelism when resources are constrained
-- **Graceful Degradation**: Pauses low-priority tools during resource pressure
+### 1. Updated Tools
+- **TruffleHog Go (v3)**: Uses the modern Go rewrite for faster secret detection.
+- **Go 1.23**: Fully supports latest Go features and `govulncheck`.
+- **NDJSON Support**: Correctly parses newline-delimited JSON from modern tools.
 
-### Intelligent Scheduling
-- **Priority-based Execution**: Critical tools run first
-- **Dependency Resolution**: Respects tool dependencies
-- **Resource Profiling**: Learns consumption patterns for optimization
-- **Parallel Optimization**: Maximizes throughput within resource limits
+### 2. Intelligent Normalization
+- Automatically masks secret data in reports.
+- Deduplicates identical findings across different tools.
+- Ignoers non-JSON logs and "noise" from tool output.
 
-### Configuration Management
-- **YAML-based Configs**: Human-readable and version controllable
-- **Validation**: Ensures configuration correctness
-- **Dynamic Updates**: Runtime configuration changes
-- **Tool-specific Settings**: Individual tool customization
+### 3. Resource Management
+- **Semaphores**: Strictly limits parallel scans to prevent system crashes.
+- **Weighted Scheduling**: Heavy tools (like Semgrep) consume more "slots" than light ones.
+
+---
 
 ## 🔧 Development
 
-### Prerequisites
-- Go 1.23+
-- Linux/macOS (Windows support planned)
-
-### Setup Development Environment
-```bash
-make setup-dev
-make dev  # Start development server with hot reload
-```
-
 ### Run Tests
 ```bash
-make test
+go test ./...
 ```
 
-### Build Docker Image
+### Clean Environment
 ```bash
-make docker-build
-make docker-run
+rm -rf results/* debug_results/*
 ```
-
-## 📊 Resource Profiling
-
-The orchestrator includes a profiling system that learns how much resources each tool consumes:
-
-```bash
-# Profile a tool on a test repository
-orchestrator profile gosec /path/to/test-repo
-
-# Results are saved and used for future scheduling decisions
-```
-
-## 🔄 Workflow
-
-1. **Agent Request**: Agent sends scan request with repo path
-2. **Resource Assessment**: Check available system resources
-3. **Config Loading**: Load tool configurations and resource profiles
-4. **Tool Filtering**: Determine which tools can run (based on conditions)
-5. **Priority Sorting**: Order tools by priority and resource requirements
-6. **Parallel Execution**: Run tools within resource limits
-7. **Monitoring**: Track resource usage and adapt as needed
-8. **Results Aggregation**: Combine all tool outputs
-9. **Response**: Return unified security report to agent
-
-## 🎯 Current Status
-
-### ✅ Implemented
-- Resource monitoring system
-- YAML configuration management
-- Basic CLI interface
-- Configuration validation
-- Default config generation
-
-### 🚧 In Progress
-- Tool execution orchestration
-- Resource-aware scheduling
-- Results aggregation
-- Tool profiling system
-
-### 📋 Planned
-- Docker integration
-- Advanced error recovery
-- Performance optimization
-- Additional security tools
 
 ## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
+Feel free to open issues or submit PRs to improve tool normalizers or scheduling logic.
 
 ## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
+MIT License.

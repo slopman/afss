@@ -1,10 +1,37 @@
 # Binaries and tools
 tools/
+bin/
 bin/orchestrator
 orchestrator
+aggregator
+findings_processor
+normalizer
 results/
 test/test_results/
 test_normalized/
+debug_results/
+
+# Local clones / nested repos (not part of this project)
+rundler/
+
+# Internal design notes (keep local; omit from public clone)
+FINDINGS_PROCESSOR_DESIGN.md
+RESOURCE_MANAGER_DESIGN.md
+
+# Sample / generated scan payloads (large; not source)
+/all_findings.json
+/all_semgrep.json
+/combined_findings.json
+/normalized_findings.json
+/processed_findings.json
+/normalized/
+
+# Full fixture repos (local only; were broken gitlinks without .gitmodules)
+/test/DTVM/
+/test/ops/
+/test/safe-config-service/
+/test/safe-transaction-service/
+/test/safe-wallet-monorepo/
 
 # Go build artifacts
 *.exe

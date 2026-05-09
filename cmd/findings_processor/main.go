@@ -43,7 +43,7 @@ func main() {
 		// Input is already normalized findings
 		fmt.Printf("Processing %d normalized findings...\n", len(normalizedFindings))
 		inputCount = len(normalizedFindings)
-		normalized, err = processor.ProcessNormalized(normalizedFindings)
+		normalized, _, err = processor.ProcessNormalized(normalizedFindings)
 	} else {
 		// Load as raw tool data
 		data, err := loadJSONFile(inputFile)
@@ -52,7 +52,7 @@ func main() {
 		}
 		fmt.Printf("Processing %d raw findings...\n", len(data))
 		inputCount = len(data)
-		normalized, err = processor.Process(data)
+		normalized, _, err = processor.Process(data)
 	}
 
 	if err != nil {

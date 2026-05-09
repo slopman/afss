@@ -2,6 +2,7 @@ package executor
 
 import (
 	"context"
+	"os/exec"
 	"testing"
 	"time"
 
@@ -18,8 +19,13 @@ func TestAdaptiveExecutor_Execute(t *testing.T) {
 
 	ctx := context.Background()
 
+	echoPath, err := exec.LookPath("echo")
+	if err != nil {
+		t.Skip("echo not in PATH:", err)
+	}
+
 	// Use 'echo' as a dummy tool
-	output, err := ae.ExecuteTool(ctx, "echo", []string{"hello world"}, ".")
+	output, err := ae.ExecuteTool(ctx, "echo", echoPath, []string{"hello world"}, ".")
 	if err != nil {
 		t.Fatalf("ExecuteTool failed: %v", err)
 	}
@@ -38,8 +44,13 @@ func TestAdaptiveExecutor_Timeout(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
 
+	sleepPath, err := exec.LookPath("sleep")
+	if err != nil {
+		t.Skip("sleep not in PATH:", err)
+	}
+
 	start := time.Now()
-	_, err := ae.ExecuteTool(ctx, "sleep", []string{"2"}, ".")
+	_, err = ae.ExecuteTool(ctx, "sleep", sleepPath, []string{"2"}, ".")
 	duration := time.Since(start)
 
 	if err == nil {

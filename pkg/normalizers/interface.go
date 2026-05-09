@@ -57,7 +57,7 @@ func (f *NormalizerFactory) registerNormalizers() {
 	f.normalizers["gosec"] = NewGosecNormalizer()
 	f.normalizers["njsscan"] = NewNjsscanNormalizer()
 	f.normalizers["hadolint"] = NewHadolintNormalizer()
-	f.normalizers["osv"] = NewOSVNormalizer()
+	f.normalizers["osv-scanner"] = NewOSVNormalizer()
 	f.normalizers["govulncheck"] = NewGovulncheckNormalizer()
 	f.normalizers["checkov"] = NewCheckovNormalizer()
 	f.normalizers["trufflehog"] = NewTruffleHogNormalizer()
