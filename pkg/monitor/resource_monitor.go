@@ -63,7 +63,7 @@ func (rm *ResourceMonitor) StartMonitoring(ctx context.Context, interval time.Du
 	ctx, cancel := context.WithCancel(ctx)
 	rm.cancel = cancel
 
-	rm.logger.Info("Starting resource monitoring", "interval", interval)
+	rm.logger.WithField("interval", interval).Info("Starting resource monitoring")
 
 	go func() {
 		ticker := time.NewTicker(interval)
@@ -174,14 +174,14 @@ func (rm *ResourceMonitor) takeSnapshot() models.ResourceSnapshot {
 		snapshot.MemoryUsedMB = int(vmStat.Used / 1024 / 1024)
 		snapshot.MemoryPercent = vmStat.UsedPercent
 	} else {
-		rm.logger.Warn("Failed to get memory stats", "error", err)
+		rm.logger.WithError(err).Warn("Failed to get memory stats")
 	}
 
 	// CPU usage (average over 1 second)
 	if cpuPercent, err := cpu.Percent(time.Second, false); err == nil && len(cpuPercent) > 0 {
 		snapshot.CPUUsedPercent = cpuPercent[0]
 	} else {
-		rm.logger.Warn("Failed to get CPU stats", "error", err)
+		rm.logger.WithError(err).Warn("Failed to get CPU stats")
 	}
 
 	// Disk usage (root filesystem)
@@ -189,7 +189,7 @@ func (rm *ResourceMonitor) takeSnapshot() models.ResourceSnapshot {
 		snapshot.DiskUsedMB = int(diskStat.Used / 1024 / 1024)
 		snapshot.DiskFreeMB = int(diskStat.Free / 1024 / 1024)
 	} else {
-		rm.logger.Warn("Failed to get disk stats", "error", err)
+		rm.logger.WithError(err).Warn("Failed to get disk stats")
 	}
 
 	return snapshot

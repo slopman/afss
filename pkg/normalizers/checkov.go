@@ -1,6 +1,7 @@
 package normalizers
 
 import (
+	"bytes"
 	"encoding/json"
 
 	"github.com/security-scanner/afss-orchestrator/pkg/findings_processor"
@@ -21,8 +22,12 @@ func (n *CheckovNormalizer) ToolName() string {
 
 // CanHandle checks if this normalizer can handle the given data
 func (n *CheckovNormalizer) CanHandle(rawData []byte) bool {
+	trim := bytes.TrimSpace(rawData)
+	if len(trim) > 0 && trim[0] == '[' {
+		return true
+	}
 	var data map[string]interface{}
-	if err := json.Unmarshal(rawData, &data); err != nil {
+	if err := json.Unmarshal(trim, &data); err != nil {
 		return false
 	}
 	
@@ -42,8 +47,24 @@ func (n *CheckovNormalizer) CanHandle(rawData []byte) bool {
 
 // Normalize converts Checkov output to normalized findings
 func (n *CheckovNormalizer) Normalize(rawData []byte) ([]findings_processor.NormalizedFinding, error) {
+	trim := bytes.TrimSpace(rawData)
+	// Checkov may emit a bare JSON array of failed checks (e.g. -o json with multiple frameworks)
+	var asArray []interface{}
+	if err := json.Unmarshal(trim, &asArray); err == nil && len(asArray) > 0 {
+		dn := findings_processor.NewDefaultNormalizer()
+		findings, err := dn.Normalize(asArray)
+		if err != nil {
+			return nil, err
+		}
+		for i := range findings {
+			findings[i].Tool = "checkov"
+			findings[i].Category = findings_processor.ConfigFinding
+		}
+		return findings, nil
+	}
+
 	var data map[string]interface{}
-	if err := json.Unmarshal(rawData, &data); err != nil {
+	if err := json.Unmarshal(trim, &data); err != nil {
 		return nil, err
 	}
 

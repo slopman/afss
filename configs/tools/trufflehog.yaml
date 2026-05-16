@@ -1,0 +1,67 @@
+# TruffleHog - Git Secrets Scanning
+# Version: 2.2.1 (INSTALLED) - OLD VERSION!
+# WARNING: This is an old version with limited features.
+# Latest version has much more options (see AFSS_IMPLEMENTATION_PLAN.md)
+# Homepage: https://github.com/trufflesecurity/trufflehog
+# CLI Reference: trufflehog --help (for installed v2.2.1)
+#
+# Available CLI flags in INSTALLED VERSION v2.2.1:
+# -h/--help, --json, --regex, --rules, --allow, --entropy, --since-commit, --max-depth
+# --branch, -i/--include-paths-file, -x/--exclude-paths-file, --repo-path, --cleanup
+#
+# NOTE: AFSS_IMPLEMENTATION_PLAN.md describes modern TruffleHog v3 with many more options:
+# --json-legacy, --github-actions, --sarif, --concurrency, --detector-timeout, --git-clone-timeout
+# --include-detectors, --exclude-detectors, --no-verification, --only-verified, --results
+# --filter-entropy, --archive-max-size, --archive-max-depth, --archive-timeout, --no-color
+# --fail, --fail-on-scan-errors, --log-level, --debug, --trace, --profile, --config
+# --verifier, --custom-verifiers-only, --no-verification-cache, --allow-verification-overlap
+# --filter-unverified, --scan-entire-chunk, --skip-additional-refs, --force-skip-binaries, --force-skip-archives
+
+tool: trufflehog
+enabled: true
+description: "Git secrets scanning"
+
+resource_profile:
+  tool_name: "trufflehog"
+  memory_peak_mb: 128
+  memory_avg_mb: 64
+  cpu_avg_percent: 30.0
+  expected_duration_seconds: 180
+  temp_space_mb: 50
+  success_rate: 0.98
+  sample_count: 10
+
+cli:
+  # Output format - Enable JSON output format
+  json: true
+
+  # Git scanning options
+  since_commit: ""              # Only scan commits since this hash
+  max_depth: 1000               # Maximum commit depth to scan (reasonable limit)
+  branch: ""                    # Specific branch to scan
+
+  # Path filtering via files - File paths containing regex patterns
+  include_paths_file: ""        # File with regex patterns for paths to INCLUDE
+  exclude_paths_file: ""        # File with regex patterns for paths to EXCLUDE
+
+  # Detection options
+  regex: false                  # Enable high-signal regex checks
+  entropy: 0.0                  # Entropy threshold (0=disabled, higher=more strict)
+
+  # Custom rules and allowlists
+  rules: ""                     # Path to custom rules JSON file
+  allow: ""                     # Path to allowed patterns JSON file
+
+  # Repository options
+  repo_path: ""                 # Alternative to git_url for local repository scanning
+
+  # Cleanup options
+  cleanup: false                # Clean up temporary result files
+
+conditions:
+  - type: "is_git_repo"
+
+metadata:
+  version: "latest"
+  homepage: "https://github.com/trufflesecurity/trufflehog"
+  documentation: "https://docs.trufflesecurity.com/trufflehog/"

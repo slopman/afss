@@ -1,0 +1,126 @@
+# OWASP Dependency Check - Multi-Language Dependencies Vulnerability Scanner
+# Version: 10.0.4
+# Homepage: https://github.com/jeremylong/DependencyCheck
+# Documentation: https://owasp.org/www-project-dependency-check/
+# CLI Reference: dependency-check.sh --advancedHelp (109 flags total)
+#
+# COMPLETE LIST OF ALL CLI FLAGS (from dependency-check.sh --advancedHelp):
+# BASIC FLAGS: --help, --version, --advancedHelp, --enableExperimental
+# SCANNING: --scan, --exclude, --project, --hints, --symLink
+# OUTPUT: --format, --out, --prettyPrint, --failOnCVSS, --junitFailOnCVSS
+# LOGGING: --log, --verbose
+# SUPPRESSION: --suppression
+# UPDATES: --noupdate, --updateonly, --purge
+# ANALYZERS: --enableExperimental, --disableJar, --disableArchive, --disableAssembly, etc (50+ analyzer flags)
+# NVD API: --nvdApiKey, --nvdApiDelay, --nvdApiEndpoint, --nvdValidForHours, etc
+# DATABASE: --connectionString, --dbDriverName, --dbDriverPath, --dbUser, --dbPassword, --data
+# PROXY: --proxyserver, --proxyport, --proxyuser, --proxypass, --nonProxyHosts
+# RETIREJS: --retireJsUrl, --retireJsUrlUser, --retireJsUrlPass, --retirejsFilter, etc
+# OSS INDEX: --ossIndexUrl, --ossIndexUsername, --ossIndexPassword, --disableOssIndex
+# NEXUS: --nexus, --nexusUser, --nexusPass, --enableNexus
+# ARTIFACTORY: --artifactoryUrl, --artifactoryUsername, --artifactoryApiToken, etc
+# LANGUAGE SPECIFIC: --dotnet, --go, --pnpm, --yarn, --bundleAudit, etc (20+ language analyzers)
+# TIMEOUTS: --connectiontimeout, --readtimeout, --nvdApiDelay
+
+tool: owasp-dep-check
+enabled: false
+description: "OWASP Dependency Check - Multi-language dependency vulnerability scanner"
+
+resource_profile:
+  tool_name: "owasp-dep-check"
+  memory_peak_mb: 1024
+  memory_avg_mb: 512
+  cpu_avg_percent: 40.0
+  expected_duration_seconds: 600
+  temp_space_mb: 500
+  success_rate: 0.95
+  sample_count: 10
+
+cli:
+  # SCANNING
+  scan: "."                              # Path to scan for dependencies (can be specified multiple times)
+  exclude: []                            # Exclusion patterns (Ant style, can be specified multiple times)
+  project: ""                            # Name of the project being scanned
+  hints: ""                              # File containing hint rules
+  symLink: ""                            # Symbolic link depth to follow
+
+  # OUTPUT & FORMATTING
+  format: "JSON"                         # Report format (HTML/XML/CSV/JSON/JUNIT/SARIF/JENKINS/GITLAB/ALL)
+  out: ""                                # Folder to write reports to (or specific file if format != ALL)
+  prettyPrint: true                      # Pretty print JSON and XML reports
+  failOnCVSS: 0                          # Fail build if CVSS score above this level (0 = never fail)
+  junitFailOnCVSS: 0                     # CVSS score considered failure for JUnit reports
+
+  # LOGGING
+  log: ""                                # File path for verbose logging
+  verbose: false                         # Enable verbose output
+
+  # SUPPRESSION & FILTERING
+  suppression: []                        # Suppression XML files (can be specified multiple times)
+
+  # UPDATES & DATABASE
+  noupdate: false                         # allow DB sync into --data (required first run; use true only with pre-seeded data)
+  updateonly: false                      # Only update databases, don't scan
+  purge: false                           # Purge the local database
+
+  # NVD API CONFIGURATION
+  nvdApiKey: ""                          # API key for NVD access
+  nvdApiDelay: 0                         # Delay between NVD API requests (milliseconds)
+  nvdApiEndpoint: ""                     # Custom NVD API endpoint
+  nvdValidForHours: 0                    # Hours NVD data remains valid
+  nvdDatafeed: ""                        # Custom NVD data feed URL
+
+  # ANALYZER CONTROL (subset of available analyzers)
+  enableExperimental: false              # Enable experimental analyzers
+  disableJar: false                      # Disable JAR analyzer
+  disableArchive: false                  # Disable archive analyzer
+  disableAssembly: false                 # Disable assembly analyzer
+  disableKnownExploited: false           # Disable Known Exploited Vulnerabilities analyzer
+
+  # LANGUAGE-SPECIFIC ANALYZERS
+  dotnet: ""                             # Path to dotnet CLI
+  go: ""                                 # Path to go binary
+  pnpm: ""                               # Path to pnpm
+  yarn: ""                               # Path to yarn
+  bundleAudit: ""                        # Path to bundle-audit for Ruby
+  bundleAuditWorkingDirectory: ""        # Working directory for bundle-audit
+
+  # OSS INDEX INTEGRATION
+  ossIndexUrl: ""                        # OSS Index API URL
+  ossIndexUsername: ""                   # OSS Index username
+  ossIndexPassword: ""                   # OSS Index password
+  disableOssIndex: false                 # Disable OSS Index analyzer
+
+  # NEXUS INTEGRATION
+  nexus: ""                              # Nexus server URL
+  nexusUser: ""                          # Nexus username
+  nexusPass: ""                          # Nexus password
+  enableNexus: false                     # Enable Nexus analyzer
+
+  # PROXY CONFIGURATION
+  proxyserver: ""                        # Proxy server hostname
+  proxyport: 80                          # Proxy server port
+  proxyuser: ""                          # Proxy username
+  proxypass: ""                          # Proxy password
+  nonProxyHosts: ""                      # Hosts that should bypass proxy
+
+  # TIMEOUTS
+  connectiontimeout: 0                   # Connection timeout in milliseconds
+  readtimeout: 0                         # Read timeout in milliseconds
+
+conditions:
+  - type: "file_exists"
+    pattern: "pom.xml"
+  - type: "file_exists"
+    pattern: "build.gradle"
+  - type: "file_exists"
+    pattern: "package.json"
+  - type: "file_exists"
+    pattern: "requirements.txt"
+  - type: "file_exists"
+    pattern: "*.csproj"
+
+metadata:
+  version: "10.0.4"
+  homepage: "https://github.com/jeremylong/DependencyCheck"
+  documentation: "https://owasp.org/www-project-dependency-check/"

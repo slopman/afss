@@ -62,7 +62,7 @@ func (m *Manager) LoadOrchestratorConfig(configPath string) (*models.Orchestrato
 		return nil, fmt.Errorf("invalid orchestrator config: %w", err)
 	}
 
-	m.logger.Info("Loaded orchestrator config", "path", configPath, "version", config.Version)
+	m.logger.WithFields(logrus.Fields{"path": configPath, "version": config.Version}).Info("Loaded orchestrator config")
 	return &config, nil
 }
 
@@ -84,7 +84,7 @@ func (m *Manager) LoadToolConfig(toolName string) (*models.ToolConfig, error) {
 		return nil, fmt.Errorf("invalid tool config for %s: %w", toolName, err)
 	}
 
-	m.logger.Debug("Loaded tool config", "tool", toolName, "path", configPath)
+	m.logger.WithFields(logrus.Fields{"tool": toolName, "path": configPath}).Debug("Loaded tool config")
 	return &config, nil
 }
 
@@ -107,7 +107,7 @@ func (m *Manager) LoadAllToolConfigs() (map[string]*models.ToolConfig, error) {
 
 		config, err := m.LoadToolConfig(toolName)
 		if err != nil {
-			m.logger.Warn("Failed to load tool config", "tool", toolName, "error", err)
+			m.logger.WithFields(logrus.Fields{"tool": toolName, "error": err}).Warn("Failed to load tool config")
 			continue
 		}
 
@@ -116,7 +116,7 @@ func (m *Manager) LoadAllToolConfigs() (map[string]*models.ToolConfig, error) {
 		}
 	}
 
-	m.logger.Info("Loaded tool configs", "count", len(toolConfigs))
+	m.logger.WithField("count", len(toolConfigs)).Info("Loaded tool configs")
 	return toolConfigs, nil
 }
 
@@ -133,7 +133,7 @@ func (m *Manager) SaveToolConfig(toolName string, config *models.ToolConfig) err
 		return fmt.Errorf("failed to write tool config: %w", err)
 	}
 
-	m.logger.Info("Saved tool config", "tool", toolName, "path", configPath)
+	m.logger.WithFields(logrus.Fields{"tool": toolName, "path": configPath}).Info("Saved tool config")
 	return nil
 }
 
@@ -189,7 +189,7 @@ func (m *Manager) CreateDefaultConfigs() error {
 	for toolName, config := range defaultTools {
 		configPath := filepath.Join(toolsDir, toolName+".yaml")
 		if err := m.saveConfig(configPath, config); err != nil {
-			m.logger.Warn("Failed to create default config", "tool", toolName, "error", err)
+			m.logger.WithFields(logrus.Fields{"tool": toolName, "error": err}).Warn("Failed to create default config")
 		}
 	}
 
@@ -338,11 +338,11 @@ func (m *Manager) createOWASPDepCheckConfig() *models.ToolConfig {
 		},
 
 		CLI: map[string]interface{}{
-			"scan":             ".",
-			"format":           "JSON",
-			"prettyPrint":      true,
-			"disableAutoUpdate": true,
-			"failOnCVSS":       0,
+			"scan":        ".",
+			"format":      "JSON",
+			"prettyPrint": true,
+			"noupdate":    true,
+			"failOnCVSS":  0,
 		},
 
 		Conditions: []models.Condition{

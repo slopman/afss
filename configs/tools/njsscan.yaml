@@ -1,0 +1,66 @@
+# Njsscan - Node.js Security Scanner
+# Version: 0.4.3
+# Homepage: https://github.com/ajinabraham/njsscan
+# Documentation: https://github.com/ajinabraham/njsscan
+# CLI Reference: njsscan --help
+#
+# COMPLETE LIST OF ALL CLI FLAGS (from njsscan --help):
+# --json: set output format as JSON
+# --sarif: set output format as SARIF 2.1.0
+# --sonarqube: set output format compatible with SonarQube
+# --html: set output format as HTML
+# -o, --output: output filename to save the result
+# -c, --config: Location to .njsscan config file
+# --missing-controls: enable missing security controls check
+# -w, --exit-warning: non zero exit code on warning
+# -v, --version: show njsscan version
+
+tool: njsscan
+enabled: true
+description: "Node.js security scanner"
+
+resource_profile:
+  tool_name: "njsscan"
+  memory_peak_mb: 256
+  memory_avg_mb: 128
+  cpu_avg_percent: 40.0
+  expected_duration_seconds: 90
+  temp_space_mb: 80
+  success_rate: 0.97
+  sample_count: 10
+
+cli:
+  # INPUT PATHS
+  paths: []                                # Path can be file(s) or directories with source code
+
+  # OUTPUT FORMATS (choose one)
+  json: true                               # set output format as JSON
+  sarif: false                             # set output format as SARIF 2.1.0
+  sonarqube: false                         # set output format compatible with SonarQube
+  html: false                              # set output format as HTML
+
+  # OUTPUT OPTIONS
+  output: ""                               # output filename to save the result
+
+  # CONFIGURATION
+  config: ""                               # Location to .njsscan config file
+
+  # ANALYSIS OPTIONS
+  missing_controls: false                  # enable missing security controls check
+
+  # EXIT BEHAVIOR
+  exit_warning: false                      # non zero exit code on warning
+
+  # VERSION INFO
+  version: false                           # show njsscan version
+
+# Execution conditions
+conditions:
+  - type: "file_exists"
+    pattern: "package.json"
+  - type: "is_git_repo"
+
+# Output parsing settings
+output_format: "json"
+error_indicators: ["high", "medium", "low"]
+success_indicators: ["No issues found"]

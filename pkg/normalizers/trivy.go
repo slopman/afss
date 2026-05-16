@@ -3,6 +3,7 @@ package normalizers
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/security-scanner/afss-orchestrator/pkg/findings_processor"
 )
@@ -20,34 +21,59 @@ func (n *TrivyNormalizer) ToolName() string {
 	return "trivy"
 }
 
+// trivyExtractResults returns the Trivy "Results" array (any key casing).
+// Trivy 0.69+ may omit "Results" entirely when there are zero findings; in that case
+// returns an empty slice if the JSON still looks like a Trivy report envelope.
+func trivyExtractResults(data map[string]interface{}) ([]interface{}, error) {
+	for k, v := range data {
+		if !strings.EqualFold(k, "Results") {
+			continue
+		}
+		if v == nil {
+			return []interface{}{}, nil
+		}
+		arr, ok := v.([]interface{})
+		if !ok {
+			return nil, fmt.Errorf("trivy Results is not an array")
+		}
+		return arr, nil
+	}
+	if trivyIsReportEnvelope(data) {
+		return []interface{}{}, nil
+	}
+	return nil, fmt.Errorf("trivy Results not found or not an array")
+}
+
+// trivyIsReportEnvelope detects a Trivy JSON report without requiring a Results key.
+func trivyIsReportEnvelope(data map[string]interface{}) bool {
+	if trivyHasSchemaVersion(data) {
+		return true
+	}
+	for k := range data {
+		if strings.EqualFold(k, "ArtifactName") || strings.EqualFold(k, "ArtifactType") {
+			return true
+		}
+	}
+	return false
+}
+
+func trivyHasSchemaVersion(data map[string]interface{}) bool {
+	for k := range data {
+		if strings.EqualFold(k, "SchemaVersion") {
+			return true
+		}
+	}
+	return false
+}
+
 // CanHandle checks if this normalizer can handle the given data
 func (n *TrivyNormalizer) CanHandle(rawData []byte) bool {
 	var data map[string]interface{}
 	if err := json.Unmarshal(rawData, &data); err != nil {
 		return false
 	}
-
-	// Trivy has "Results" array and "SchemaVersion" field
-	_, hasResults := data["Results"]
-	_, hasSchema := data["SchemaVersion"]
-
-	if !hasResults || !hasSchema {
-		return false
-	}
-
-	// Check if Results contains objects with Vulnerabilities
-	results, ok := data["Results"].([]interface{})
-	if !ok || len(results) == 0 {
-		return false
-	}
-
-	firstResult, ok := results[0].(map[string]interface{})
-	if !ok {
-		return false
-	}
-
-	_, hasVulnerabilities := firstResult["Vulnerabilities"]
-	return hasVulnerabilities
+	_, err := trivyExtractResults(data)
+	return err == nil
 }
 
 // Normalize converts Trivy output to normalized findings
@@ -57,9 +83,9 @@ func (n *TrivyNormalizer) Normalize(rawData []byte) ([]findings_processor.Normal
 		return nil, fmt.Errorf("failed to parse trivy JSON: %w", err)
 	}
 
-	results, ok := data["Results"].([]interface{})
-	if !ok {
-		return nil, fmt.Errorf("trivy Results not found or not an array")
+	results, err := trivyExtractResults(data)
+	if err != nil {
+		return nil, err
 	}
 
 	var normalized []findings_processor.NormalizedFinding
@@ -70,29 +96,55 @@ func (n *TrivyNormalizer) Normalize(rawData []byte) ([]findings_processor.Normal
 			continue
 		}
 
-		vulnerabilities, exists := resultMap["Vulnerabilities"]
-		if !exists {
-			continue
-		}
-
-		vulnArray, ok := vulnerabilities.([]interface{})
-		if !ok {
-			continue
-		}
-
-		for _, vuln := range vulnArray {
-			vulnMap, ok := vuln.(map[string]interface{})
+		if vulnerabilities, exists := resultMap["Vulnerabilities"]; exists {
+			vulnArray, ok := vulnerabilities.([]interface{})
 			if !ok {
 				continue
 			}
 
-			finding, err := n.normalizeSingleVulnerability(vulnMap, resultMap)
-			if err != nil {
-				// Skip invalid results but continue processing
+			for _, vuln := range vulnArray {
+				vulnMap, ok := vuln.(map[string]interface{})
+				if !ok {
+					continue
+				}
+
+				finding, err := n.normalizeSingleVulnerability(vulnMap, resultMap)
+				if err != nil {
+					continue
+				}
+
+				normalized = append(normalized, finding)
+			}
+		}
+
+		if secrets, exists := resultMap["Secrets"]; exists {
+			secretArray, ok := secrets.([]interface{})
+			if !ok {
 				continue
 			}
+			for _, sec := range secretArray {
+				secMap, ok := sec.(map[string]interface{})
+				if !ok {
+					continue
+				}
+				finding := n.normalizeTrivySecret(secMap, resultMap)
+				normalized = append(normalized, finding)
+			}
+		}
 
-			normalized = append(normalized, finding)
+		if misconfigs, exists := resultMap["Misconfigurations"]; exists {
+			misArray, ok := misconfigs.([]interface{})
+			if !ok {
+				continue
+			}
+			for _, mc := range misArray {
+				mcMap, ok := mc.(map[string]interface{})
+				if !ok {
+					continue
+				}
+				finding := n.normalizeTrivyMisconfig(mcMap, resultMap)
+				normalized = append(normalized, finding)
+			}
 		}
 	}
 
@@ -140,9 +192,41 @@ func (n *TrivyNormalizer) normalizeSingleVulnerability(vuln map[string]interface
 	return finding, nil
 }
 
+func (n *TrivyNormalizer) normalizeTrivySecret(sec map[string]interface{}, result map[string]interface{}) findings_processor.NormalizedFinding {
+	finding := findings_processor.NormalizedFinding{RawData: sec}
+	finding.Title = n.extractString(sec, []string{"Title", "RuleID"}, "Secret")
+	finding.Description = n.extractString(sec, []string{"Title", "Match"}, "")
+	finding.RuleID = n.extractString(sec, []string{"RuleID", "ID"}, "unknown")
+	finding.File = n.extractString(result, []string{"Target"}, "unknown")
+	finding.Line = n.extractInt(sec, []string{"StartLine", "Line"}, 0)
+	severityStr := n.extractString(sec, []string{"Severity"}, "HIGH")
+	finding.Severity = n.normalizeSeverity(severityStr)
+	finding.Confidence = findings_processor.Certain
+	finding.Category = findings_processor.SecretFinding
+	finding.Tool = "trivy"
+	finding.ID = fmt.Sprintf("trivy_secret_%s_%s_%d", finding.File, finding.RuleID, finding.Line)
+	return finding
+}
+
+func (n *TrivyNormalizer) normalizeTrivyMisconfig(mc map[string]interface{}, result map[string]interface{}) findings_processor.NormalizedFinding {
+	finding := findings_processor.NormalizedFinding{RawData: mc}
+	finding.Title = n.extractString(mc, []string{"Title", "ID"}, "Misconfiguration")
+	finding.Description = n.extractString(mc, []string{"Description", "Message"}, "")
+	finding.RuleID = n.extractString(mc, []string{"ID", "AVDID"}, "unknown")
+	finding.File = n.extractString(result, []string{"Target"}, "unknown")
+	finding.Line = n.extractInt(mc, []string{"StartLine", "Line"}, 0)
+	severityStr := n.extractString(mc, []string{"Severity"}, "UNKNOWN")
+	finding.Severity = n.normalizeSeverity(severityStr)
+	finding.Confidence = findings_processor.Certain
+	finding.Category = findings_processor.ConfigFinding
+	finding.Tool = "trivy"
+	finding.ID = fmt.Sprintf("trivy_misconfig_%s_%s_%d", finding.File, finding.RuleID, finding.Line)
+	return finding
+}
+
 // normalizeSeverity converts Trivy severity to standard levels
 func (n *TrivyNormalizer) normalizeSeverity(sev string) findings_processor.SeverityLevel {
-	switch sev {
+	switch strings.ToUpper(strings.TrimSpace(sev)) {
 	case "CRITICAL":
 		return findings_processor.Critical
 	case "HIGH":
@@ -221,6 +305,22 @@ func (n *TrivyNormalizer) extractString(data map[string]interface{}, fields []st
 		if val, exists := data[field]; exists {
 			if strVal, ok := val.(string); ok && strVal != "" {
 				return strVal
+			}
+		}
+	}
+	return defaultValue
+}
+
+func (n *TrivyNormalizer) extractInt(data map[string]interface{}, fields []string, defaultValue int) int {
+	for _, field := range fields {
+		if val, exists := data[field]; exists {
+			switch v := val.(type) {
+			case float64:
+				return int(v)
+			case json.Number:
+				if i, err := v.Int64(); err == nil {
+					return int(i)
+				}
 			}
 		}
 	}

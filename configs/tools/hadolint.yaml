@@ -1,0 +1,88 @@
+# Hadolint - Dockerfile Linter written in Haskell
+# Version: 2.12.0
+# Homepage: https://github.com/hadolint/hadolint
+# Documentation: https://github.com/hadolint/hadolint
+# CLI Reference: hadolint --help
+#
+# COMPLETE LIST OF ALL CLI FLAGS (from hadolint --help):
+# -v, --version: Show version
+# -c, --config: Path to the configuration file
+# --file-path-in-report: The file path referenced in the generated report (for checkstyle format)
+# --no-fail: Don't exit with a failure status code when any rule is violated
+# --no-color: Don't colorize output
+# -V, --verbose: Enables verbose logging of hadolint's output to stderr
+# -f, --format: The output format for the results (tty/json/checkstyle/codeclimate/gitlab_codeclimate/gnu/codacy/sonarqube/sarif)
+# --error: Make the rule RULECODE have the level 'error'
+# --warning: Make the rule RULECODE have the level 'warning'
+# --info: Make the rule RULECODE have the level 'info'
+# --style: Make the rule RULECODE have the level 'style'
+# --ignore: A rule to ignore. If present, the ignore list in the config file is ignored
+# --trusted-registry: A docker registry to allow to appear in FROM instructions
+# --require-label: The option --require-label=label:format makes Hadolint check that the label conforms to format requirement
+# --strict-labels: Do not permit labels other than specified in `label-schema`
+# --disable-ignore-pragma: Disable inline ignore pragmas # hadolint ignore=DLxxxx
+# -t, --failure-threshold: Exit with failure code only when rules with severity equal to or above THRESHOLD are violated
+
+tool: hadolint
+enabled: true
+description: "Dockerfile linter written in Haskell"
+
+resource_profile:
+  tool_name: "hadolint"
+  memory_peak_mb: 256
+  memory_avg_mb: 128
+  cpu_avg_percent: 30.0
+  expected_duration_seconds: 60
+  temp_space_mb: 50
+  success_rate: 0.99
+  sample_count: 10
+
+cli:
+  # INPUT FILES
+  dockerfiles: []                         # Dockerfiles to lint (positional arguments)
+
+  # GENERAL OPTIONS
+  version: false                          # Show version
+
+  # CONFIGURATION
+  config: ""                              # Path to the configuration file
+
+  # OUTPUT OPTIONS
+  format: "json"                          # The output format for the results (tty/json/checkstyle/codeclimate/gitlab_codeclimate/gnu/codacy/sonarqube/sarif)
+  file_path_in_report: ""                  # The file path referenced in the generated report (for checkstyle format)
+  no_fail: false                          # Don't exit with a failure status code when any rule is violated
+  no_color: false                         # Don't colorize output
+  verbose: false                          # Enables verbose logging of hadolint's output to stderr
+
+  # RULE SEVERITY OVERRIDES
+  error: []                               # Make the rule RULECODE have the level 'error'
+  warning: []                             # Make the rule RULECODE have the level 'warning'
+  info: []                                # Make the rule RULECODE have the level 'info'
+  style: []                               # Make the rule RULECODE have the level 'style'
+
+  # RULE FILTERING
+  ignore: []                              # A rule to ignore. If present, the ignore list in the config file is ignored
+
+  # REGISTRY AND SECURITY
+  trusted_registry: []                     # A docker registry to allow to appear in FROM instructions
+
+  # LABEL REQUIREMENTS
+  require_label: []                        # The option --require-label=label:format makes Hadolint check that the label conforms to format requirement
+  strict_labels: false                     # Do not permit labels other than specified in `label-schema`
+
+  # PRAGMAS
+  disable_ignore_pragma: false             # Disable inline ignore pragmas # hadolint ignore=DLxxxx
+
+  # FAILURE THRESHOLD
+  failure_threshold: "info"                # Exit with failure code only when rules with severity equal to or above THRESHOLD are violated (error/warning/info/style/ignore/none)
+
+# Execution conditions
+conditions:
+  - type: "file_exists"
+    pattern: "Dockerfile"
+  - type: "is_git_repo"
+
+# Output parsing settings
+output_format: "json"
+error_indicators: ["error", "failure"]
+success_indicators: ["success", "passed"]

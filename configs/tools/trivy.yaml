@@ -1,0 +1,268 @@
+# Trivy - Container Vulnerability & Filesystem Scanner
+# Version: 0.69.0
+# Homepage: https://trivy.dev
+# Documentation: https://aquasecurity.github.io/trivy/
+# CLI Reference: trivy filesystem --help
+
+# COMPLETE LIST OF ALL CLI FLAGS (from trivy filesystem --help):
+# --cache-backend: [EXPERIMENTAL] cache backend (e.g. redis://localhost:6379) (default "memory")
+# --cache-ttl: cache TTL when using redis as cache backend
+# --redis-ca: redis ca file location, if using redis as cache backend
+# --redis-cert: redis certificate file location, if using redis as cache backend
+# --redis-key: redis key file location, if using redis as cache backend
+# --redis-tls: enable redis TLS with public certificates, if using redis as cache backend
+# --db-repository: OCI repository(ies) to retrieve trivy-db in order of priority (default [mirror.gcr.io/aquasec/trivy-db:2,ghcr.io/aquasecurity/trivy-db:2])
+# --download-db-only: download/update vulnerability database but don't run a scan
+# --download-java-db-only: download/update Java index database but don't run a scan
+# --java-db-repository: OCI repository(ies) to retrieve trivy-java-db in order of priority (default [mirror.gcr.io/aquasec/trivy-java-db:1,ghcr.io/aquasecurity/trivy-java-db:1])
+# --no-progress: suppress progress bar
+# --skip-db-update: skip updating vulnerability database
+# --skip-java-db-update: skip updating Java index database
+# --ignored-licenses: specify a list of license to ignore
+# --license-confidence-level: specify license classifier's confidence level (default 0.9)
+# --license-full: eagerly look for licenses in source code headers and license files
+# --ansible-extra-vars: set additional variables as key=value or @file (YAML/JSON)
+# --ansible-inventory: specify inventory host path or comma separated host list
+# --ansible-playbook: specify playbook file path(s) to scan
+# --cf-params: specify paths to override the CloudFormation parameters files
+# --checks-bundle-repository: OCI registry URL to retrieve checks bundle from (default "mirror.gcr.io/aquasec/trivy-checks:2")
+# --config-file-schemas: specify paths to JSON configuration file schemas to determine that a file matches some configuration and pass the schema to Rego checks for type checking
+# --helm-api-versions: Available API versions used for Capabilities.APIVersions. This flag is the same as the api-versions flag of the helm template command. (can specify multiple or separate values with commas: policy/v1/PodDisruptionBudget,apps/v1/Deployment)
+# --helm-kube-version: Kubernetes version used for Capabilities.KubeVersion. This flag is the same as the kube-version flag of the helm template command.
+# --helm-set: specify Helm values on the command line (can specify multiple or separate values with commas: key1=val1,key2=val2)
+# --helm-set-file: specify Helm values from respective files specified via the command line (can specify multiple or separate values with commas: key1=path1,key2=path2)
+# --helm-set-string: specify Helm string values on the command line (can specify multiple or separate values with commas: key1=val1,key2=val2)
+# --helm-values: specify paths to override the Helm values.yaml files
+# --include-non-failures: include successes, available with '--scanners misconfig'
+# --misconfig-scanners: comma-separated list of misconfig scanners to use for misconfiguration scanning (default [azure-arm,cloudformation,dockerfile,helm,kubernetes,terraform,terraformplan-json,terraformplan-snapshot,ansible])
+# --raw-config-scanners: specify the types of scanners that will also scan raw configurations. For example, scanners will scan a non-adapted configuration into a shared state (allowed values: terraform)
+# --render-cause: specify configuration types for which the rendered causes will be shown in the table report (allowed values: terraform,ansible)
+# --tf-exclude-downloaded-modules: exclude misconfigurations for downloaded terraform modules
+# --tf-vars: specify paths to override the Terraform tfvars files
+# --enable-modules: [EXPERIMENTAL] module names to enable
+# --module-dir: specify directory to the wasm modules that will be loaded (default "/home/r/.trivy/modules")
+# --include-dev-deps: include development dependencies in the report (supported: npm, yarn, gradle)
+# --pkg-relationships: list of package relationships (default [unknown,root,workspace,direct,indirect])
+# --pkg-types: list of package types (allowed values: os,library) (default [os,library])
+# --custom-headers: custom headers in client mode
+# --server: server address in client mode
+# --token: for authentication in client/server mode
+# --token-header: specify a header name for token in client/server mode (default "Trivy-Token")
+# --password: password. Comma-separated passwords allowed. TRIVY_PASSWORD should be used for security reasons.
+# --password-stdin: password from stdin. Comma-separated passwords are not supported.
+# --registry-token: registry token
+# --username: username. Comma-separated usernames allowed.
+# --check-namespaces: Rego namespaces
+# --config-check: specify the paths to the Rego check files or to the directories containing them, applying config files
+# --config-data: specify paths from which data for the Rego checks will be recursively loaded
+# --include-deprecated-checks: include deprecated checks
+# --rego-error-limit: maximum number of compile errors allowed during Rego policy evaluation (default 10)
+# --skip-check-update: skip fetching rego check updates
+# --trace-rego: enable more verbose trace output for custom queries
+# --compliance: compliance report to generate
+# --dependency-tree: [EXPERIMENTAL] show dependency origin tree of vulnerable packages
+# --exit-code: specify exit code when any security issues are found
+# -f, --format: format (default "table")
+# --ignore-policy: specify the Rego file path to evaluate each vulnerability
+# --ignorefile: specify .trivyignore file (default ".trivyignore")
+# --list-all-pkgs: output all packages in the JSON report regardless of vulnerability (default true)
+# -o, --output: output file name
+# --output-plugin-arg: [EXPERIMENTAL] output plugin arguments
+# --report: specify a compliance report format for the output (allowed values: all,summary) (default "all")
+# -s, --severity: severities of security issues to be displayed (default [UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL])
+# --show-suppressed: [EXPERIMENTAL] show suppressed vulnerabilities
+# --table-mode: [EXPERIMENTAL] tables that will be displayed in 'table' format (allowed values: summary,detailed) (default [summary,detailed])
+# -t, --template: output template
+# --detection-priority: specify the detection priority (allowed values: precise,comprehensive) (default "precise")
+# --disable-telemetry: disable sending anonymous usage data to Aqua
+# --distro: [EXPERIMENTAL] specify a distribution, <family>/<version>
+# --file-patterns: specify config file patterns
+# --offline-scan: do not issue API requests to identify dependencies
+# --parallel: number of goroutines enabled for parallel scanning, set 0 to auto-detect parallelism (default 5)
+# --rekor-url: [EXPERIMENTAL] address of rekor STL server (default "https://rekor.sigstore.dev")
+# --sbom-sources: [EXPERIMENTAL] try to retrieve SBOM from the specified sources (allowed values: oci,rekor)
+# --scanners: comma-separated list of what security issues to detect (allowed values: vuln,misconfig,secret,license) (default [vuln,secret])
+# --skip-dirs: specify the directories or glob patterns to skip
+# --skip-files: specify the files or glob patterns to skip
+# --skip-version-check: suppress notices about version updates and Trivy announcements
+# --secret-config: specify a path to config file for secret scanning (default "trivy-secret.yaml")
+# --ignore-status: comma-separated list of vulnerability status to ignore
+# --ignore-unfixed: display only fixed vulnerabilities
+# --skip-vex-repo-update: [EXPERIMENTAL] Skip VEX Repository update
+# --vex: [EXPERIMENTAL] VEX sources ("repo", "oci" or file path)
+# --vuln-severity-source: order of data sources for selecting vulnerability severity level (default [auto])
+# --cacert: Path to PEM-encoded CA certificate file
+# --cache-dir: cache directory (default "/home/r/.cache/trivy")
+# -c, --config: config path (default "trivy.yaml")
+# -d, --debug: debug mode
+# --generate-default-config: write the default config to trivy-default.yaml
+# --insecure: allow insecure server connections
+# -q, --quiet: suppress progress bar and log output
+# --timeout: timeout (default 5m0s)
+# -v, --version: show version
+
+tool: trivy
+enabled: true
+description: "Container vulnerability & filesystem scanner"
+
+resource_profile:
+  tool_name: "trivy"
+  memory_peak_mb: 512
+  memory_avg_mb: 256
+  cpu_avg_percent: 40.0
+  expected_duration_seconds: 300
+  temp_space_mb: 200
+  success_rate: 0.95
+  sample_count: 10
+
+cli:
+  # CACHE FLAGS
+  cache_backend: "memory"                    # [EXPERIMENTAL] cache backend (e.g. redis://localhost:6379)
+  cache_ttl: ""                              # cache TTL when using redis as cache backend
+  redis_ca: ""                               # redis ca file location, if using redis as cache backend
+  redis_cert: ""                             # redis certificate file location, if using redis as cache backend
+  redis_key: ""                              # redis key file location, if using redis as cache backend
+  redis_tls: false                           # enable redis TLS with public certificates, if using redis as cache backend
+
+  # DB FLAGS
+  db_repository: []                           # OCI repository(ies) to retrieve trivy-db in order of priority
+  download_db_only: false                     # download/update vulnerability database but don't run a scan
+  download_java_db_only: false                # download/update Java index database but don't run a scan
+  java_db_repository: []                      # OCI repository(ies) to retrieve trivy-java-db in order of priority
+  no_progress: false                          # suppress progress bar
+  skip_db_update: false                       # skip updating vulnerability database
+  skip_java_db_update: false                  # skip updating Java index database
+
+  # LICENSE FLAGS
+  ignored_licenses: []                        # specify a list of license to ignore
+  license_confidence_level: 0.9               # specify license classifier's confidence level
+  license_full: false                         # eagerly look for licenses in source code headers and license files
+
+  # MISCONFIGURATION FLAGS
+  ansible_extra_vars: []                      # set additional variables as key=value or @file (YAML/JSON)
+  ansible_inventory: []                       # specify inventory host path or comma separated host list
+  ansible_playbook: []                        # specify playbook file path(s) to scan
+  cf_params: []                               # specify paths to override the CloudFormation parameters files
+  checks_bundle_repository: "mirror.gcr.io/aquasec/trivy-checks:2"  # OCI registry URL to retrieve checks bundle from
+  config_file_schemas: []                     # specify paths to JSON configuration file schemas
+  helm_api_versions: []                       # Available API versions used for Capabilities.APIVersions
+  helm_kube_version: ""                       # Kubernetes version used for Capabilities.KubeVersion
+  helm_set: []                                # specify Helm values on the command line
+  helm_set_file: []                           # specify Helm values from respective files
+  helm_set_string: []                         # specify Helm string values on the command line
+  helm_values: []                             # specify paths to override the Helm values.yaml files
+  include_non_failures: false                 # include successes, available with '--scanners misconfig'
+  misconfig_scanners: ["azure-arm", "cloudformation", "dockerfile", "helm", "kubernetes", "terraform", "terraformplan-json", "terraformplan-snapshot", "ansible"]  # comma-separated list of misconfig scanners
+  raw_config_scanners: []                     # specify the types of scanners that will also scan raw configurations
+  render_cause: []                            # specify configuration types for which the rendered causes will be shown
+  tf_exclude_downloaded_modules: false        # exclude misconfigurations for downloaded terraform modules
+  tf_vars: []                                 # specify paths to override the Terraform tfvars files
+
+  # MODULE FLAGS
+  enable_modules: []                          # [EXPERIMENTAL] module names to enable
+  module_dir: "/home/r/.trivy/modules"        # specify directory to the wasm modules that will be loaded
+
+  # PACKAGE FLAGS
+  include_dev_deps: false                     # include development dependencies in the report
+  pkg_relationships: ["unknown", "root", "workspace", "direct", "indirect"]  # list of package relationships
+  pkg_types: ["os", "library"]                # list of package types
+
+  # CLIENT/SERVER FLAGS
+  custom_headers: []                          # custom headers in client mode
+  server: ""                                  # server address in client mode
+  token: ""                                   # for authentication in client/server mode
+  token_header: "Trivy-Token"                 # specify a header name for token in client/server mode
+
+  # REGISTRY FLAGS
+  password: []                                # password. Comma-separated passwords allowed
+  password_stdin: false                       # password from stdin
+  registry_token: ""                          # registry token
+  username: []                                # username. Comma-separated usernames allowed
+
+  # REGO FLAGS
+  check_namespaces: []                        # Rego namespaces
+  config_check: []                            # specify the paths to the Rego check files or directories
+  config_data: []                             # specify paths from which data for the Rego checks will be loaded
+  include_deprecated_checks: false            # include deprecated checks
+  rego_error_limit: 10                        # maximum number of compile errors allowed during Rego policy evaluation
+  skip_check_update: false                    # skip fetching rego check updates
+  trace_rego: false                           # enable more verbose trace output for custom queries
+
+  # REPORT FLAGS
+  compliance: ""                              # compliance report to generate
+  dependency_tree: false                      # [EXPERIMENTAL] show dependency origin tree of vulnerable packages
+  exit_code: 0                                # specify exit code when any security issues are found
+  format: "json"                              # format (table/json/sarif/etc)
+  ignore_policy: ""                           # specify the Rego file path to evaluate each vulnerability
+  ignorefile: ".trivyignore"                  # specify .trivyignore file
+  list_all_pkgs: true                         # output all packages in the JSON report regardless of vulnerability
+  output: ""                                  # output file name
+  output_plugin_arg: ""                       # [EXPERIMENTAL] output plugin arguments
+  report: "all"                               # specify a compliance report format for the output
+  severity: ["UNKNOWN", "LOW", "MEDIUM", "HIGH", "CRITICAL"]  # severities of security issues to be displayed
+  show_suppressed: false                      # [EXPERIMENTAL] show suppressed vulnerabilities
+  table_mode: ["summary", "detailed"]         # [EXPERIMENTAL] tables that will be displayed in 'table' format
+  template: ""                                # output template
+
+  # SCAN FLAGS
+  detection_priority: "precise"               # specify the detection priority (precise/comprehensive)
+  disable_telemetry: false                    # disable sending anonymous usage data to Aqua
+  distro: ""                                  # [EXPERIMENTAL] specify a distribution, <family>/<version>
+  file_patterns: []                           # specify config file patterns
+  offline_scan: false                         # do not issue API requests to identify dependencies
+  parallel: 5                                 # number of goroutines enabled for parallel scanning
+  rekor_url: "https://rekor.sigstore.dev"     # [EXPERIMENTAL] address of rekor STL server
+  sbom_sources: []                            # [EXPERIMENTAL] try to retrieve SBOM from the specified sources
+  scanners: ["vuln", "secret"]                # comma-separated list of what security issues to detect
+  skip_dirs: []                               # specify the directories or glob patterns to skip
+  skip_files: []                              # specify the files or glob patterns to skip
+  skip_version_check: false                   # suppress notices about version updates and Trivy announcements
+
+  # SECRET FLAGS
+  secret_config: ""                         # optional; set only if file exists in repo
+
+  # VULNERABILITY FLAGS
+  ignore_status: []                           # comma-separated list of vulnerability status to ignore
+  ignore_unfixed: false                       # display only fixed vulnerabilities
+  skip_vex_repo_update: false                  # [EXPERIMENTAL] Skip VEX Repository update
+  vex: []                                     # [EXPERIMENTAL] VEX sources
+  vuln_severity_source: ["auto"]               # order of data sources for selecting vulnerability severity level
+
+  # GLOBAL FLAGS
+  cacert: ""                                  # Path to PEM-encoded CA certificate file
+  cache_dir: ""                               # cache directory
+  config: ""                                # optional project trivy.yaml (unset avoids FATAL if missing)
+  debug: false                                # debug mode
+  generate_default_config: false              # write the default config to trivy-default.yaml
+  insecure: false                             # allow insecure server connections
+  quiet: true                                 # suppress progress bar and log output (keeps JSON stdout clean for the normalizer)
+  timeout: "5m0s"                             # timeout
+  version: false                              # show version
+
+conditions:
+  - type: "is_git_repo"
+  - type: "file_exists"
+    pattern: "*.go"
+  - type: "file_exists"
+    pattern: "*.py"
+  - type: "file_exists"
+    pattern: "*.js"
+  - type: "file_exists"
+    pattern: "*.java"
+  - type: "file_exists"
+    pattern: "*.cs"
+  - type: "file_exists"
+    pattern: "Dockerfile"
+  - type: "file_exists"
+    pattern: "*.tf"
+  - type: "file_exists"
+    pattern: "*.yaml"
+  - type: "file_exists"
+    pattern: "*.yml"
+  - type: "file_exists"
+    pattern: "*.json"
+
+metadata:
+  version: "0.69.0"
+  homepage: "https://github.com/aquasecurity/trivy"
+  documentation: "https://trivy.dev/"

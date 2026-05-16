@@ -48,6 +48,19 @@ Results:
 - **HTML:** `results/report.html`
 - **Primary JSON:** `results/actionable_findings.json` (normalized findings + `correlations`)
 
+`REPO_PATH` defaults to `/tmp` in `docker-compose.yml` so `docker compose build` works on a clean clone; set a real path before `up` when scanning a repo.
+
+## Clone on another machine
+
+```bash
+git clone <your-remote-url> afss-orchestrator
+cd afss-orchestrator
+export REPO_PATH=/absolute/path/to/repo/to/scan
+docker compose up --build
+```
+
+Only source and YAML configs are meant to be committed; local binaries, `/tools/` vendor tree, `/audits/`, `/results/`, and secrets stay out of git (see `.gitignore`). After fixing ignore rules, add missing source once: `git add cmd/orchestrator pkg/tools configs/tools pkg/util docs` (adjust to taste) before the first push.
+
 ## Local development
 
 **Requirements:** Go **1.24+** (see `go.mod`), scanner binaries on `PATH` (or paths in tool YAML).

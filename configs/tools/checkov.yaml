@@ -1,0 +1,143 @@
+# Checkov - Infrastructure as Code Security Scanner
+# Version: 3.2.500
+# Homepage: https://www.checkov.io/
+# Documentation: https://www.checkov.io/1.Welcome/Quick%20Start.html
+# CLI Reference: checkov --help
+#
+# COMPLETE LIST OF ALL CLI FLAGS (68 flags total from checkov --help):
+# INPUT & SCANNING: --directory, --file, --skip-path, --framework, --skip-framework, --add-check
+# EXTERNAL CHECKS: --external-checks-dir, --external-checks-git, --run-all-external-checks
+# OUTPUT & FORMATTING: --output, --output-file-path, --quiet, --compact, --list, --summary-position
+# CHECK CONTROL: --check, --skip-check, --include-all-checkov-policies, --policy-metadata-filter
+# BASELINE & COMPARISON: --create-baseline, --baseline, --output-baseline-as-skipped
+# CONFIGURATION: --config-file, --create-config, --show-config
+# CLOUD INTEGRATION: --bc-api-key, --prisma-api-url, --repo-id, --branch, --skip-results-upload
+# DOCKER: --docker-image, --dockerfile-path
+# TERRAFORM: --download-external-modules, --external-modules-download-path, --var-file
+# SECRETS SCANNING: --secrets-scan-file-type, --enable-secret-scan-all-files, --block-list-secret-scan
+# CVE SCANNING: --skip-cve-package
+# ERROR HANDLING: --soft-fail-on, --hard-fail-on, --no-fail-on-crash, --skip-resources-without-violations
+# ADVANCED: --deep-analysis, --evaluate-variables, --repo-root-for-plan-enrichment, --use-enforcement-rules
+# NETWORK: --ca-certificate, --no-cert-verify
+# SECRETS HISTORY: --scan-secrets-history, --secrets-history-timeout
+# MASKING: --mask
+# CUSTOMIZATION: --custom-tool-name
+
+tool: checkov
+enabled: true
+description: "Infrastructure as Code security scanner for Terraform, CloudFormation, Kubernetes, and more"
+
+resource_profile:
+  tool_name: "checkov"
+  memory_peak_mb: 1024
+  memory_avg_mb: 512
+  cpu_avg_percent: 70.0
+  expected_duration_seconds: 600
+  temp_space_mb: 500
+  success_rate: 0.98
+  sample_count: 10
+
+cli:
+  # GENERAL OPTIONS
+  version: false                          # Show version information
+  support: false                          # Enable debug logs and upload to server (requires API key)
+
+  # INPUT SOURCES (choose directory or file, not both)
+  directory: ""                           # IaC root directory to scan
+  file: []                                # Specific files to scan
+  add_check: false                        # Generate new check via CLI prompt
+
+  # PATH FILTERING
+  skip_path: ""                           # Paths to skip during scanning
+
+  # EXTERNAL CHECKS
+  external_checks_dir: ""                 # Directory with external check files
+  external_checks_git: []                 # Git repositories with external checks
+  run_all_external_checks: false          # Run all external checks
+
+  # OUTPUT & FORMATTING
+  list: false                             # List all available checks
+  output: "json"                          # Output format (cli/json/sarif/junitxml/github_failed_only/gitlab_sast/cyclonedx/spdx)
+  output_file_path: ""                    # Path to save output file
+  output_bc_ids: false                    # Include Bridgecrew check IDs in output
+  include_all_checkov_policies: false     # Include all Checkov policies in scan
+  quiet: false                            # Suppress progress output
+  compact: false                          # Compact output format
+  summary_position: "top"                 # Position of summary in output (top/bottom)
+
+  # FRAMEWORK SELECTION
+  framework: []                           # Frameworks to scan (terraform/cloudformation/kubernetes/etc)
+  skip_framework: []                      # Frameworks to skip
+
+  # CHECK CONTROL
+  check: ""                               # Specific checks to run
+  skip_check: ""                          # Checks to skip
+  policy_metadata_filter: ""              # Filter policies by metadata
+  policy_metadata_filter_exception: ""    # Exceptions for metadata filter
+
+  # ERROR HANDLING
+  soft_fail_on: ""                        # Exit codes to treat as soft failures
+  hard_fail_on: ""                        # Exit codes to treat as hard failures
+  no_fail_on_crash: false                 # Don't fail if tool crashes
+  skip_resources_without_violations: false # Skip resources without violations in output
+
+  # CONFIGURATION MANAGEMENT
+  config_file: ""                         # Path to config file
+  create_config: ""                       # Create config file at path
+  show_config: false                      # Show current configuration
+
+  # BASELINE & COMPARISON
+  create_baseline: false                  # Create baseline file
+  baseline: ""                            # Path to baseline file for comparison
+  output_baseline_as_skipped: false       # Output baseline violations as skipped
+
+  # CLOUD INTEGRATION
+  bc_api_key: ""                          # Bridgecrew/Prisma Cloud API key
+  prisma_api_url: ""                      # Prisma Cloud API URL
+  repo_id: ""                             # Repository ID for cloud integration
+  branch: ""                              # Branch name for scanning
+  skip_results_upload: false              # Skip uploading results to cloud
+
+  # DOCKER SUPPORT
+  docker_image: ""                        # Docker image to scan
+  dockerfile_path: ""                     # Path to Dockerfile
+
+  # TERRAFORM SPECIFIC
+  download_external_modules: false         # Download external Terraform modules
+  external_modules_download_path: ""       # Path for downloaded modules
+  var_file: []                            # Terraform variable files
+  evaluate_variables: true                # Evaluate Terraform variables
+  repo_root_for_plan_enrichment: ""        # Repository root for plan enrichment
+
+  # ADVANCED ANALYSIS
+  deep_analysis: false                    # Enable deep analysis
+  use_enforcement_rules: false            # Use enforcement rules
+
+  # NETWORK & SECURITY
+  ca_certificate: ""                      # CA certificate file
+  no_cert_verify: false                   # Skip SSL certificate verification
+
+  # SECRETS SCANNING
+  secrets_scan_file_type: []              # File types for secrets scanning
+  enable_secret_scan_all_files: false     # Scan all files for secrets
+  block_list_secret_scan: []              # Block list for secret scanning
+  scan_secrets_history: false             # Scan git history for secrets
+  secrets_history_timeout: 12             # Timeout for secrets history scan
+
+  # CVE SCANNING
+  skip_cve_package: ""                    # Skip CVE scanning for specific packages
+
+  # MASKING & CUSTOMIZATION
+  mask: []                                # Mask sensitive data in output
+  custom_tool_name: ""                    # Custom tool name for reports
+
+# Execution conditions
+conditions:
+  - type: "file_exists"
+    pattern: "."
+  - type: "is_git_repo"
+
+# Output parsing settings
+output_format: "json"
+error_indicators: ["FAILED"]
+success_indicators: ["SUCCESS", "PASSED"]

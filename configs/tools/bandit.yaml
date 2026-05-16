@@ -1,0 +1,97 @@
+# Bandit - Python Source Code Security Analyzer
+# Version: 1.9.3
+# Homepage: https://github.com/PyCQA/bandit
+# Documentation: https://bandit.readthedocs.io/
+# CLI Reference: bandit --help
+#
+# COMPLETE LIST OF ALL CLI FLAGS (from bandit --help):
+# -a, --aggregate: aggregate output by vulnerability (default) or by filename
+# -b, --baseline: path of a baseline report to compare against (only JSON-formatted files)
+# -c, --configfile: optional config file to use for selecting plugins and overriding defaults
+# --confidence-level: report only issues of given confidence level or higher (all/low/medium/high)
+# -d, --debug: turn on debug mode
+# --exit-zero: exit with 0, even with results found
+# -f, --format: specify output format (csv/custom/html/json/screen/txt/xml/yaml)
+# --ignore-nosec: do not skip lines with # nosec comments
+# --ini: path to a .bandit file that supplies command line arguments
+# -l, --level: report only issues of given severity level or higher (-l for LOW, -ll for MEDIUM, -lll for HIGH)
+# --msg-template: specify output message template (only usable with --format custom)
+# -n, --number: maximum number of code lines to output for each issue
+# -o, --output: write report to filename
+# -p, --profile: profile to use (defaults to executing all tests)
+# -q, --quiet: only show output in the case of an error
+# -r, --recursive: find and process files in subdirectories
+# --severity-level: report only issues of given severity level or higher (all/low/medium/high)
+# -s, --skip: comma-separated list of test IDs to skip
+# -t, --tests: comma-separated list of test IDs to run
+# -v, --verbose: output extra information like excluded and included files
+# -x, --exclude: comma-separated list of paths (glob patterns supported) to exclude from scan
+# --version: show program's version number and exit
+
+tool: bandit
+enabled: true
+description: "Python source code security analyzer"
+
+resource_profile:
+  tool_name: "bandit"
+  memory_peak_mb: 256
+  memory_avg_mb: 128
+  cpu_avg_percent: 50.0
+  expected_duration_seconds: 120
+  temp_space_mb: 100
+  success_rate: 0.98
+  sample_count: 10
+
+cli:
+  # INPUT & TARGETS
+  targets: []                              # source file(s) or directory(s) to be tested
+
+  # SCANNING OPTIONS
+  recursive: true                          # find and process files in subdirectories
+  aggregate: "vuln"                        # aggregate output by vulnerability or by filename
+
+  # OUTPUT OPTIONS
+  format: "json"                           # specify output format (csv/custom/html/json/screen/txt/xml/yaml)
+  output_file: ""                          # write report to filename
+  number: 0                                # maximum number of code lines to output for each issue
+  msg_template: ""                         # specify output message template (for custom format)
+
+  # FILTERING & SELECTION
+  configfile: ""                           # optional config file for selecting plugins and overriding defaults
+  profile: ""                              # profile to use (defaults to executing all tests)
+  tests: ""                                # comma-separated list of test IDs to run
+  skips: ""                                # comma-separated list of test IDs to skip
+  exclude: ""                              # comma-separated list of paths (glob patterns supported) to exclude
+
+  # SEVERITY & CONFIDENCE LEVELS
+  severity_level: "all"                    # report only issues of given severity level or higher (all/low/medium/high)
+  confidence_level: "all"                  # report only issues of given confidence level or higher (all/low/medium/high)
+
+  # BEHAVIOR OPTIONS
+  verbose: false                           # output extra information like excluded and included files
+  debug: false                             # turn on debug mode
+  quiet: false                             # only show output in the case of an error
+  ignore_nosec: false                      # do not skip lines with # nosec comments
+
+  # BASELINE & COMPARISON
+  baseline: ""                             # path of a baseline report to compare against (JSON only)
+
+  # CONFIGURATION FILES
+  ini_path: ""                             # path to a .bandit file that supplies command line arguments
+
+  # EXIT BEHAVIOR
+  exit_zero: false                         # exit with 0, even with results found
+
+  # VERSION INFO
+  version: false                           # show program's version number and exit
+
+# Execution conditions
+conditions:
+  - type: "file_exists"
+    pattern: "*.py"
+  - type: "is_git_repo"
+
+# Output parsing settings
+output_format: "json"
+error_indicators: ["HIGH", "MEDIUM", "LOW"]
+success_indicators: ["No issues identified"]

@@ -1,9 +1,12 @@
+# REPO_PATH: absolute path to repo root for `up`/`run`. Default lets `compose build` work
+# without exporting anything; always set REPO_PATH for real scans (see audits/README.md).
 services:
   orchestrator:
     build: .
     volumes:
-      - ${REPO_PATH}:/scan:ro
-      - ./results:/app/results
+      - ${REPO_PATH:-/tmp}:/scan:ro
+      # Хост-путь задаёт вызывающая сторона (sec_audit, бот и т.д.); по умолчанию — ./results рядом с compose.
+      - ${AFSS_RESULTS_HOST_PATH:-./results}:/app/results
     environment:
       - SCAN_PATH=/scan
     command: ["scan", "/scan"]

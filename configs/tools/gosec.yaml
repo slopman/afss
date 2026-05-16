@@ -1,0 +1,151 @@
+# Gosec - Go Security Static Analysis
+# Version: 2.22.1
+# Homepage: https://github.com/securecodewarrior/gosec
+# Documentation: https://securego.io/
+# CLI Reference: gosec --help
+#
+# COMPLETE LIST OF ALL CLI FLAGS (from gosec --help):
+# -ai-api-key: Key to access the AI API
+# -ai-api-provider: AI API provider to generate auto fixes to issues (Valid: gemini)
+# -ai-endpoint: Endpoint AI API (optional, default API endpoint used when not provided)
+# -color: Prints the text format report with colorization when it goes in the stdout (default true)
+# -concurrency: Concurrency value (default 8)
+# -conf: Path to optional config file
+# -confidence: Filter out issues with lower confidence than given value (Valid: low, medium, high, default: low)
+# -enable-audit: Enable audit mode
+# -exclude: Comma separated list of rules IDs to exclude (see rule list)
+# -exclude-dir: Exclude folder from scan (can be specified multiple times)
+# -exclude-generated: Exclude generated files
+# -fmt: Set output format (Valid: json, yaml, csv, junit-xml, html, sonarqube, golint, sarif, text, default: text)
+# -include: Comma separated list of rules IDs to include (see rule list)
+# -log: Log messages to file rather than stderr
+# -no-fail: Do not fail the scanning, even if issues were found
+# -nosec: Ignores #nosec comments when set
+# -nosec-tag: Set an alternative string for #nosec (examples: #dontanalyze, #falsepositive)
+# -out: Set output file for results
+# -quiet: Only show output when errors are found
+# -r: Appends "./..." to the target dir
+# -severity: Filter out issues with lower severity than given value (Valid: low, medium, high, default: low)
+# -show-ignored: If enabled, ignored issues are printed
+# -sort: Sort issues by severity (default true)
+# -stdout: Stdout the results as well as write it in the output file
+# -tags: Comma separated list of build tags
+# -terse: Shows only the results and summary
+# -tests: Scan tests files
+# -track-suppressions: Output suppression information, including its kind and justification
+# -verbose: Overrides the output format when stdout the results while saving them in the output file (Valid: json, yaml, csv, junit-xml, html, sonarqube, golint, sarif, text)
+# -version: Print version and quit with exit code 0
+
+tool: gosec
+enabled: true
+description: "Go static security analysis"
+
+resource_profile:
+  tool_name: "gosec"
+  memory_peak_mb: 256
+  memory_avg_mb: 128
+  cpu_avg_percent: 50.0
+  expected_duration_seconds: 120
+  temp_space_mb: 100
+  success_rate: 0.95
+  sample_count: 10
+
+cli:
+  # AI API key - Key to access the AI API
+  ai_api_key: ""
+
+  # AI API provider - AI API provider to generate auto fixes to issues (Valid: gemini)
+  ai_api_provider: ""
+
+  # AI endpoint - Endpoint AI API (optional, default API endpoint used when not provided)
+  ai_endpoint: ""
+
+  # Colorized output - Prints the text format report with colorization when it goes in stdout (default true)
+  color: true
+
+  # Concurrency level - Concurrency value (default 8)
+  concurrency: 8
+
+  # Config file path - Path to optional config file
+  conf: ""
+
+  # Confidence filter - Filter out issues with lower confidence than given value (Valid: low, medium, high, default: low)
+  confidence: "low"
+
+  # Enable audit mode - Enable audit mode
+  enable_audit: false
+
+  # Exclude rules - Comma separated list of rules IDs to exclude (see rule list)
+  exclude: ""
+
+  # Exclude directories - Exclude folder from scan (can be specified multiple times)
+  exclude_dir: ""
+
+  # Exclude generated files - Exclude generated files
+  exclude_generated: false
+
+  # Output format - Set output format (Valid: json, yaml, csv, junit-xml, html, sonarqube, golint, sarif, text, default: text)
+  fmt: "json"
+
+  # Include rules - Comma separated list of rules IDs to include (see rule list)
+  include: ""
+
+  # Log file path - Log messages to file rather than stderr
+  log: ""
+
+  # Don't fail on findings - Do not fail the scanning, even if issues were found
+  no_fail: false
+
+  # Ignore nosec comments - Ignores #nosec comments when set
+  nosec: false
+
+  # Custom nosec tag - Set an alternative string for #nosec (examples: #dontanalyze, #falsepositive)
+  nosec_tag: ""
+
+  # Output file path - Set output file for results
+  out: ""
+
+  # Quiet mode - Only show output when errors are found
+  quiet: false
+
+  # Append to target - Appends "./..." to the target dir
+  r: false
+
+  # Severity filter - Filter out issues with lower severity than given value (Valid: low, medium, high, default: low)
+  severity: "low"
+
+  # Show ignored issues - If enabled, ignored issues are printed
+  show_ignored: false
+
+  # Sort by severity - Sort issues by severity (default true)
+  sort: true
+
+  # Stdout results - Stdout the results as well as write it in the output file
+  stdout: false
+
+  # Build tags - Comma separated list of build tags
+  tags: ""
+
+  # Terse output - Shows only the results and summary
+  terse: false
+
+  # Scan test files - Scan tests files
+  tests: false
+
+  # Track suppressions - Output suppression information, including its kind and justification
+  track_suppressions: false
+
+  # Verbose format - Overrides the output format when stdout the results while saving them in the output file (Valid: json, yaml, csv, junit-xml, html, sonarqube, golint, sarif, text)
+  verbose: ""
+
+  # Show version - Print version and quit with exit code 0
+  version: false
+
+conditions:
+  - type: "file_exists"
+    pattern: "*.go"
+
+metadata:
+  version: "2.22.1"
+  homepage: "https://github.com/securecodewarrior/gosec"
+  documentation: "https://securego.io/"

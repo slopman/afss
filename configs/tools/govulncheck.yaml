@@ -1,0 +1,72 @@
+# Govulncheck - Go Vulnerability Database Checker
+# Version: latest (Go toolchain)
+# Homepage: https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck
+# Documentation: https://go.dev/security/vuln/
+# CLI Reference: govulncheck --help
+#
+# COMPLETE LIST OF ALL CLI FLAGS (from govulncheck --help):
+# -C: change to dir before running govulncheck
+# -db: vulnerability database url (default "https://vuln.go.dev")
+# -format: specify format output (supported: text, json, sarif, openvex, default: text)
+# -json: output JSON (Go compatible legacy flag, see format flag)
+# -mode: supports 'source', 'binary', and 'extract' (default 'source')
+# -scan: set the scanning level desired, one of 'module', 'package', or 'symbol' (default 'symbol')
+# -show: enable display of additional information specified by the comma separated list (supported: traces, color, version, verbose)
+# -tags: comma-separated list of build tags
+# -test: analyze test files (only valid for source mode, default false)
+# -version: print the version information
+
+tool: govulncheck
+enabled: true
+description: "Go vulnerability database checker"
+
+resource_profile:
+  tool_name: "govulncheck"
+  memory_peak_mb: 256
+  memory_avg_mb: 128
+  cpu_avg_percent: 30.0
+  expected_duration_seconds: 180
+  temp_space_mb: 50
+  success_rate: 0.98
+  sample_count: 10
+
+cli:
+  # SCAN TARGETS
+  patterns: []                           # Go package patterns to scan (positional arguments)
+
+  # SCAN MODE
+  mode: "source"                         # supports 'source', 'binary', and 'extract' (default 'source')
+
+  # SCAN LEVEL
+  scan: "symbol"                         # set the scanning level desired, one of 'module', 'package', or 'symbol' (default 'symbol')
+
+  # OUTPUT FORMAT
+  format: "json"                         # specify format output (supported: text, json, sarif, openvex, default: text)
+
+  # LEGACY JSON FLAG (deprecated)
+  json: false                            # output JSON (Go compatible legacy flag, see format flag)
+
+  # ADDITIONAL INFORMATION
+  show: []                               # enable display of additional information (supported: traces, color, version, verbose)
+
+  # DATABASE
+  db: ""                                 # vulnerability database url (default "https://vuln.go.dev")
+
+  # DIRECTORY
+  C: ""                                  # change to dir before running govulncheck
+
+  # BUILD OPTIONS
+  tags: ""                               # comma-separated list of build tags
+  test: false                            # analyze test files (only valid for source mode, default false)
+
+  # VERSION INFO
+  version: false                         # print the version information
+
+conditions:
+  - type: "file_exists"
+    pattern: "go.mod"
+
+metadata:
+  version: "latest"
+  homepage: "https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck"
+  documentation: "https://go.dev/security/vuln/"

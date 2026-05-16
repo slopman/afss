@@ -53,6 +53,16 @@ func TestHadolintNormalizer_CanHandle(t *testing.T) {
 			expected: false,
 		},
 		{
+			name:     "Empty JSON array then parse error line",
+			rawData:  "[]\nhadolint: /scan/Dockerfile: withBinaryFile: cannot read",
+			expected: true,
+		},
+		{
+			name:     "TTY-style line",
+			rawData:  "Dockerfile:5 DL3006 Always tag the version of an image explicitly",
+			expected: true,
+		},
+		{
 			name: "Other JSON",
 			rawData: `[
 				{
@@ -125,6 +135,64 @@ func TestHadolintNormalizer_Normalize(t *testing.T) {
 	}
 	if f2.Line != 10 {
 		t.Errorf("f2.Line = %v, want %v", f2.Line, 10)
+	}
+}
+
+func TestHadolintNormalizer_Normalize_ParseErrorPlaintext(t *testing.T) {
+	n := NewHadolintNormalizer()
+	raw := "hadolint: /scan/Dockerfile: withBinaryFile: cannot read file"
+	findings, err := n.Normalize([]byte(raw))
+	if err != nil {
+		t.Fatalf("Normalize() error = %v", err)
+	}
+	if len(findings) != 1 {
+		t.Fatalf("want 1 finding, got %d", len(findings))
+	}
+	if findings[0].RuleID != "HADOLINT_PARSE" {
+		t.Errorf("RuleID = %q, want HADOLINT_PARSE", findings[0].RuleID)
+	}
+	if findings[0].File != "/scan/Dockerfile" {
+		t.Errorf("File = %q", findings[0].File)
+	}
+}
+
+func TestHadolintNormalizer_Normalize_EmptyJSONArrayPlusParseError(t *testing.T) {
+	n := NewHadolintNormalizer()
+	raw := "[]\nhadolint: /scan/Dockerfile: withBinaryFile: cannot read file"
+	findings, err := n.Normalize([]byte(raw))
+	if err != nil {
+		t.Fatalf("Normalize() error = %v", err)
+	}
+	if len(findings) != 1 {
+		t.Fatalf("want 1 finding, got %d", len(findings))
+	}
+	if findings[0].RuleID != "HADOLINT_PARSE" {
+		t.Errorf("RuleID = %q", findings[0].RuleID)
+	}
+}
+
+func TestHadolintNormalizer_Normalize_JSONFindingsPlusParseErrorTail(t *testing.T) {
+	n := NewHadolintNormalizer()
+	raw := `[
+		{
+			"line": 1,
+			"code": "DL3006",
+			"message": "Always tag the version of an image explicitly",
+			"column": 1,
+			"file": "Dockerfile",
+			"level": "warning"
+		}
+	]
+hadolint: /scan/Dockerfile: withBinaryFile: cannot read file`
+	findings, err := n.Normalize([]byte(raw))
+	if err != nil {
+		t.Fatalf("Normalize() error = %v", err)
+	}
+	if len(findings) != 2 {
+		t.Fatalf("want 2 findings, got %d", len(findings))
+	}
+	if findings[1].RuleID != "HADOLINT_PARSE" {
+		t.Errorf("second finding RuleID = %q", findings[1].RuleID)
 	}
 }
 

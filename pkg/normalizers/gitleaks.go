@@ -3,8 +3,10 @@ package normalizers
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/security-scanner/afss-orchestrator/pkg/findings_processor"
+	"github.com/security-scanner/afss-orchestrator/pkg/util"
 )
 
 // GitleaksNormalizer handles Gitleaks secret scanner output
@@ -22,33 +24,23 @@ func (n *GitleaksNormalizer) ToolName() string {
 
 // CanHandle checks if this normalizer can handle the given data
 func (n *GitleaksNormalizer) CanHandle(rawData []byte) bool {
-	// Try to parse as array first (Gitleaks format)
-	var data []interface{}
-	if err := json.Unmarshal(rawData, &data); err != nil {
+	data, err := parseGitleaksJSONArray(rawData)
+	if err != nil || len(data) == 0 {
 		return false
 	}
-
-	if len(data) == 0 {
-		return false
-	}
-
-	// Check if first element has Gitleaks-specific fields
 	firstResult, ok := data[0].(map[string]interface{})
 	if !ok {
 		return false
 	}
-
-	// Gitleaks has "Secret" field and "RuleID" field
 	_, hasSecret := firstResult["Secret"]
 	_, hasRuleID := firstResult["RuleID"]
-
 	return hasSecret && hasRuleID
 }
 
 // Normalize converts Gitleaks output to normalized findings
 func (n *GitleaksNormalizer) Normalize(rawData []byte) ([]findings_processor.NormalizedFinding, error) {
-	var data []interface{}
-	if err := json.Unmarshal(rawData, &data); err != nil {
+	data, err := parseGitleaksJSONArray(rawData)
+	if err != nil {
 		return nil, fmt.Errorf("failed to parse gitleaks JSON: %w", err)
 	}
 
@@ -132,4 +124,44 @@ func (n *GitleaksNormalizer) extractInt(data map[string]interface{}, fields []st
 		}
 	}
 	return defaultValue
+}
+
+// parseGitleaksJSONArray accepts a JSON array, a single finding object, NDJSON lines,
+// or stdout with trailing non-JSON noise after the first complete JSON value.
+func parseGitleaksJSONArray(rawData []byte) ([]interface{}, error) {
+	s := strings.TrimSpace(string(rawData))
+	if s == "" {
+		return nil, fmt.Errorf("empty gitleaks output")
+	}
+	if frag := util.FirstJSONValue(s); frag != "" {
+		s = frag
+	}
+	var asArray []interface{}
+	if err := json.Unmarshal([]byte(s), &asArray); err == nil {
+		return asArray, nil
+	}
+	var asObj map[string]interface{}
+	if err := json.Unmarshal([]byte(s), &asObj); err == nil {
+		if _, ok := asObj["RuleID"]; ok {
+			return []interface{}{asObj}, nil
+		}
+	}
+	var lines []interface{}
+	for _, line := range strings.Split(s, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || line[0] != '{' {
+			continue
+		}
+		var m map[string]interface{}
+		if json.Unmarshal([]byte(line), &m) != nil {
+			continue
+		}
+		if _, ok := m["RuleID"]; ok {
+			lines = append(lines, m)
+		}
+	}
+	if len(lines) > 0 {
+		return lines, nil
+	}
+	return nil, fmt.Errorf("unrecognized gitleaks output shape")
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
+	"strings"
 	"syscall"
 	"time"
 
@@ -57,6 +58,9 @@ func (ae *AdaptiveExecutor) ExecuteTool(ctx context.Context, toolName string, bi
 	if err := cmd.Start(); err != nil {
 		return "", fmt.Errorf("failed to start tool %s: %w", toolName, err)
 	}
+	if toolName == "owasp-dep-check" {
+		ae.logger.Infof("%s: dependency-check started — first CVE/NVD sync can take many minutes with little output", toolName)
+	}
 
 	// 5. Wait for completion or context cancellation
 	done := make(chan error, 1)
@@ -69,14 +73,56 @@ func (ae *AdaptiveExecutor) ExecuteTool(ctx context.Context, toolName string, bi
 		// Context cancelled/timed out, kill the whole process group
 		ae.logger.Warnf("Tool %s timed out or cancelled, killing process group", toolName)
 		ae.killProcessGroup(cmd.Process.Pid)
-		return string(stdout), ctx.Err()
+		return combineToolOutput(toolName, stdout, stderr), ctx.Err()
 	case err := <-done:
 		if err != nil {
-			return string(stdout), err
+			return combineToolOutput(toolName, stdout, stderr), err
 		}
 	}
 
-	return string(stdout), nil
+	return combineToolOutput(toolName, stdout, stderr), nil
+}
+
+// combineToolOutput prefers stdout for tools that emit machine-readable JSON on stdout
+// and put human logs on stderr; merging both breaks json.Decoder.
+func combineToolOutput(toolName string, stdout, stderr []byte) string {
+	// Hadolint prints JSON on stdout and parse/configuration errors on stderr.
+	// stdout-only mode would hide stderr when stdout is "[]" or non-JSON text.
+	if toolName == "hadolint" {
+		out := strings.TrimSpace(string(stdout))
+		errt := strings.TrimSpace(string(stderr))
+		if len(errt) > 0 {
+			if len(out) == 0 {
+				return string(stderr)
+			}
+			if out == "[]" || !(len(out) > 0 && out[0] == '[') {
+				return string(stdout) + "\n" + string(stderr)
+			}
+		}
+	}
+	if toolPrefersStdoutOnly(toolName) {
+		if len(stdout) > 0 {
+			return string(stdout)
+		}
+		return string(stderr)
+	}
+	if len(stderr) == 0 {
+		return string(stdout)
+	}
+	if len(stdout) == 0 {
+		return string(stderr)
+	}
+	return string(stdout) + string(stderr)
+}
+
+func toolPrefersStdoutOnly(toolName string) bool {
+	switch toolName {
+	case "gosec", "semgrep", "trufflehog", "bandit", "checkov", "trivy",
+		"gitleaks", "osv-scanner", "govulncheck", "njsscan", "hadolint":
+		return true
+	default:
+		return false
+	}
 }
 
 // killProcessGroup kills the entire process group starting with the given PID

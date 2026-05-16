@@ -1,0 +1,92 @@
+# Gitleaks - Git Secrets Scanner
+# Version: 8.18.2
+# Homepage: https://github.com/gitleaks/gitleaks
+# Documentation: https://github.com/gitleaks/gitleaks
+# CLI Reference: gitleaks detect --help
+#
+# COMPLETE LIST OF ALL CLI FLAGS (from gitleaks detect --help):
+# -b, --baseline-path: path to baseline with issues that can be ignored
+# -c, --config: config file path (order of precedence: 1. --config/-c, 2. env var GITLEAKS_CONFIG, 3. (--source/-s)/.gitleaks.toml)
+# --enable-rule: only enable specific rules by id, ex: gitleaks detect --enable-rule=atlassian-api-token --enable-rule=slack-access-token
+# --exit-code: exit code when leaks have been encountered (default 1)
+# --follow-symlinks: scan files that are symlinks to other files
+# -i, --gitleaks-ignore-path: path to .gitleaksignore file or folder containing one (default ".")
+# --ignore-gitleaks-allow: ignore gitleaks:allow comments
+# -l, --log-level: log level (trace, debug, info, warn, error, fatal) (default "info")
+# --log-opts: git log options
+# --max-target-megabytes: files larger than this will be skipped
+# --no-banner: suppress banner
+# --no-color: turn off color for verbose output
+# --no-git: treat git repo as a regular directory and scan those files, --log-opts has no effect on the scan when --no-git is set
+# --pipe: scan input from stdin, ex: cat some_file | gitleaks detect --pipe
+# --redact: redact secrets from logs and stdout (default 100%)
+# -f, --report-format: output format (json, csv, junit, sarif) (default "json")
+# -r, --report-path: report file
+# -s, --source: path to source (default ".")
+# -v, --verbose: show verbose output from scan
+
+tool: gitleaks
+enabled: true
+description: "Scans code, past or present, for secrets"
+
+resource_profile:
+  tool_name: "gitleaks"
+  memory_peak_mb: 512
+  memory_avg_mb: 256
+  cpu_avg_percent: 40.0
+  expected_duration_seconds: 120
+  temp_space_mb: 100
+  success_rate: 0.97
+  sample_count: 10
+
+cli:
+  # COMMAND SELECTION
+  command: "detect"                       # Command to run (detect is default)
+
+  # INPUT SOURCE
+  source: "."                             # path to source (default ".")
+
+  # CONFIGURATION
+  config: ""                              # config file path (order of precedence: --config/-c, env var GITLEAKS_CONFIG, (--source/-s)/.gitleaks.toml)
+  gitleaks_ignore_path: "."               # path to .gitleaksignore file or folder containing one (default ".")
+
+  # OUTPUT OPTIONS
+  report_format: "json"                   # output format (json, csv, junit, sarif) (default "json")
+  report_path: ""                         # default: /tmp/afss-gitleaks-report.json (Gitleaks v8+ writes report only to -r, not stdout)
+  verbose: false                          # show verbose output from scan
+  no_banner: true                         # suppress banner (recommended; logs stay on stderr)
+  no_color: false                         # turn off color for verbose output
+  log_level: "info"                       # log level (trace, debug, info, warn, error, fatal) (default "info")
+
+  # FILTERING AND IGNORING
+  baseline_path: ""                       # path to baseline with issues that can be ignored
+  enable_rule: []                         # only enable specific rules by id
+  ignore_gitleaks_allow: false            # ignore gitleaks:allow comments
+
+  # SCANNING OPTIONS
+  no_git: false                           # treat git repo as a regular directory and scan those files
+  pipe: false                             # scan input from stdin
+  follow_symlinks: false                  # scan files that are symlinks to other files
+
+  # GIT OPTIONS
+  log_opts: ""                            # git log options
+
+  # PERFORMANCE
+  max_target_megabytes: 0                 # files larger than this will be skipped
+
+  # SECURITY
+  redact: 100                             # redact secrets from logs and stdout (default 100%)
+
+  # EXIT BEHAVIOR
+  exit_code: 1                            # exit code when leaks have been encountered (default 1)
+
+# Execution conditions
+conditions:
+  - type: "is_git_repo"
+  - type: "file_exists"
+    pattern: ".git"
+
+# Output parsing settings
+output_format: "json"
+error_indicators: ["leak", "secret", "error"]
+success_indicators: ["success", "no leaks found"]

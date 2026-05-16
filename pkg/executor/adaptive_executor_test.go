@@ -3,6 +3,7 @@ package executor
 import (
 	"context"
 	"os/exec"
+	"strings"
 	"testing"
 	"time"
 
@@ -59,5 +60,13 @@ func TestAdaptiveExecutor_Timeout(t *testing.T) {
 
 	if duration > 500*time.Millisecond {
 		t.Errorf("Tool took too long to return after timeout: %v", duration)
+	}
+}
+
+func TestCombineToolOutput_HadolintMergesStderrWhenStdoutEmptyOrNonJSON(t *testing.T) {
+	stderr := "hadolint: /scan/Dockerfile: withBinaryFile: cannot read file\n"
+	got := combineToolOutput("hadolint", []byte("[]\n"), []byte(stderr))
+	if !strings.Contains(got, "[]") || !strings.Contains(got, "hadolint:") {
+		t.Fatalf("expected merged stdout+stderr, got %q", got)
 	}
 }

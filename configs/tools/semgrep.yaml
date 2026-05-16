@@ -1,0 +1,125 @@
+# Semgrep - Multi-Language SAST (Semantic Analysis)
+# Version: 1.150.0
+# Homepage: https://semgrep.dev
+# Documentation: https://semgrep.dev/docs
+# CLI Reference: semgrep scan --help
+#
+# COMPLETE LIST OF ALL CLI FLAGS (from semgrep scan --help - 120+ flags total):
+# Core scanning: --config, --pattern, --lang, --exclude, --include, --skip-unknown-extensions
+# Output formats: --json, --sarif, --junit-xml, --gitlab-sast, --gitlab-secrets, --text, --emacs, --vim
+# Output files: --output, --error, --dataflow-traces
+# Behavior: --autofix, --dryrun, --force-color, --no-rewrite-rule-ids, --disable-nosem, --enable-nosem
+# Filtering: --severity, --exclude-rule, --replacement, --max-target-bytes, --timeout
+# Performance: --jobs, --max-memory, --time, --profiling
+# Network: --metrics, --disable-version-check, --enable-version-check
+# Advanced: --dump-ast, --dump-rule, --validate, --test, --version
+# Experimental: --allow-local-builds, --allow-untrusted-validators, --baseline-commit, --diff-depth
+# And 80+ more flags for rules, patterns, engines, secrets, supply chain, etc.
+
+tool: semgrep
+enabled: true
+description: "Multi-language semantic code analysis"
+
+resource_profile:
+  tool_name: "semgrep"
+  memory_peak_mb: 512
+  memory_avg_mb: 256
+  cpu_avg_percent: 60.0
+  expected_duration_seconds: 300
+  temp_space_mb: 200
+  success_rate: 0.95
+  sample_count: 10
+
+cli:
+  # CONFIGURATION & SCANNING
+  config: "auto"                           # Path to config file or registry entry (e.g., "auto", "p/ci", ".semgrep.yml")
+  pattern: ""                              # Code search pattern
+  lang: ""                                 # Parse target files with this language
+  exclude: []                              # Skip files matching these patterns
+  include: []                              # Include only files matching these patterns
+  skip_unknown_extensions: false           # Skip files with unknown extensions
+  max_target_bytes: 1000000               # Maximum size of target file to scan
+  jobs: 1                                  # Number of parallel jobs
+
+  # OUTPUT FORMATS & FILES
+  json: true                              # Output results in JSON format
+  sarif: false                            # Output results in SARIF format for GitHub Security Tab
+  junit_xml: false                        # Output results in JUnit XML format
+  gitlab_sast: false                      # Output results in GitLab SAST format
+  gitlab_secrets: false                   # Output results in GitLab Secrets format
+  text: false                             # Output results in human-readable text format
+  emacs: false                            # Output in Emacs format
+  vim: false                              # Output in Vim format
+
+  output: ""                              # General output file path
+  error: ""                               # Write stderr to file
+  json_output: ""                         # JSON-specific output file
+  sarif_output: ""                        # SARIF-specific output file
+  junit_xml_output: ""                    # JUnit XML-specific output file
+  gitlab_sast_output: ""                  # GitLab SAST-specific output file
+  gitlab_secrets_output: ""               # GitLab Secrets-specific output file
+  text_output: ""                         # Text-specific output file
+  emacs_output: ""                        # Emacs-specific output file
+  vim_output: ""                          # Vim-specific output file
+
+  # BEHAVIOR & AUTOFIX
+  autofix: false                          # Apply autofix patches (WARNING: data loss possible)
+  dryrun: false                           # Show autofix changes without applying
+  force_color: false                      # Force color output even when not in terminal
+  no_rewrite_rule_ids: false              # Do not rewrite rule IDs
+  disable_nosem: false                    # Negates --enable-nosem
+  enable_nosem: true                      # Enable nosem comments to ignore findings
+  dataflow_traces: false                  # Explain data flow to findings
+
+  # FILTERING & LIMITS
+  severity: []                            # Filter by severity (INFO, WARNING, ERROR)
+  exclude_rule: []                        # Exclude rules by ID
+  timeout: 30                             # Timeout per rule in seconds
+  max_memory: 0                           # Maximum memory usage in MB (0 = unlimited)
+  time: false                             # Include timing information
+
+  # DEBUGGING & VERBOSE
+  verbose: false                          # Enable verbose output
+  debug: false                            # Enable debug mode with detailed logging
+  quiet: true                             # Suppress progress bar and non-error output
+
+  # EXPERIMENTAL FEATURES
+  allow_local_builds: false                # Allow building projects in repository
+  allow_untrusted_validators: false        # Allow validators from non-semgrep.dev origins
+  baseline_commit: ""                      # Only show results not in this commit
+  diff_depth: 0                            # Max depth for diff-based scanning
+
+  # NETWORK & METRICS
+  metrics: "auto"                          # Send usage metrics (on/off/auto)
+  disable_version_check: false             # Skip version update checks
+  enable_version_check: true               # Check for version updates
+
+  # ADVANCED DEBUGGING
+  dump_ast: false                          # Show AST of input and exit
+  dump_rule: ""                            # Show rule in JSON and exit
+  exclude_minified_files: false # Exclude minified JavaScript/CSS files
+  no_exclude_minified_files: false # Don't exclude minified files
+  use_git_ignore: false         # Respect .gitignore files
+  no_git_ignore: false          # Don't respect .gitignore files
+  novcs: false                  # Don't use VCS-aware scanning
+
+conditions:
+  - type: "file_exists"
+    pattern: "*.py"
+  - type: "file_exists"
+    pattern: "*.js"
+  - type: "file_exists"
+    pattern: "*.ts"
+  - type: "file_exists"
+    pattern: "*.java"
+  - type: "file_exists"
+    pattern: "*.go"
+  - type: "file_exists"
+    pattern: "*.rb"
+  - type: "file_exists"
+    pattern: "*.php"
+
+metadata:
+  version: "latest"
+  homepage: "https://semgrep.dev"
+  documentation: "https://semgrep.dev/docs"

@@ -1,24 +1,35 @@
-# Binaries and tools
-tools/
-bin/
-bin/orchestrator
-orchestrator
-aggregator
-findings_processor
-normalizer
-results/
-test/test_results/
-test_normalized/
-debug_results/
+# -----------------------------------------------------------------------------
+# Важно: ведущий «/» якорит к корню репо. Без «/» шаблон matчится на любой уровень
+# (например «orchestrator» скрывал бы и cmd/orchestrator — ломая docker build).
+# -----------------------------------------------------------------------------
 
-# Local clones / nested repos (not part of this project)
-rundler/
+# Скачанные CLI и бинарники в корне (не исходники)
+/tools/
+/bin/
 
-# Internal design notes (keep local; omit from public clone)
-FINDINGS_PROCESSOR_DESIGN.md
-RESOURCE_MANAGER_DESIGN.md
+# Собранные бинарники в корне (go build -o …)
+/orchestrator
+/aggregator
+/findings_processor
+/normalizer
 
-# Sample / generated scan payloads (large; not source)
+# Артефакты прогонов у корня репо
+/results/
+/test/test_results/
+/test_normalized/
+/debug_results/
+
+# Локальные прогоны / клоны под проект (sec_audit, ручные сканы)
+/audits/
+
+# Вложенный репозиторий не для пуша
+/rundler/
+
+# Внутренние черновики (остаются локально)
+/FINDINGS_PROCESSOR_DESIGN.md
+/RESOURCE_MANAGER_DESIGN.md
+
+# Крупные сгенерированные JSON в корне
 /all_findings.json
 /all_semgrep.json
 /combined_findings.json
@@ -26,46 +37,44 @@ RESOURCE_MANAGER_DESIGN.md
 /processed_findings.json
 /normalized/
 
-# Full fixture repos (local only; were broken gitlinks without .gitmodules)
+# Тяжёлые фикстуры-клоны в test/ (локально)
 /test/DTVM/
 /test/ops/
 /test/safe-config-service/
 /test/safe-transaction-service/
 /test/safe-wallet-monorepo/
 
-# Go build artifacts
+# Go
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
-
-# Test binary, built with `go test -c`
 *.test
-
-# Output of the go coverage tool
 *.out
-
-# Go workspace file
 go.work
+go.work.sum
+/vendor/
 
-# Dependency directories
-vendor/
-
-# IDE files
+# IDE / OS
 .vscode/
 .idea/
 *.swp
 *.swo
-
-# OS files
 .DS_Store
 Thumbs.db
 
-# Logs
+# Логи
 *.log
-logs/
+/logs/
 
-# Config files that might contain secrets
+# Секреты
+.env
+.env.*
+!.env.example
 *.credentials.yaml
 *.credentials.yml
+
+# Мусор от редакторов / бэкапы
+*.backup
+*~

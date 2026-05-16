@@ -107,8 +107,10 @@ func (v *Validator) validateCLIParameters(toolName string, cli map[string]interf
 		return v.validateGovulncheckCLI(cli)
 	case "trivy":
 		return v.validateTrivyCLI(cli)
+	case "bandit", "checkov", "hadolint", "njsscan", "osv-scanner", "gitleaks":
+		return nil
 	default:
-		v.logger.Warn("No CLI validation for tool", "tool", toolName)
+		v.logger.WithField("tool", toolName).Warn("No CLI validation for tool")
 		return nil
 	}
 }

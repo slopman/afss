@@ -1,0 +1,114 @@
+# OSV-Scanner - Vulnerability Scanner
+# Version: 2.3.2
+# Homepage: https://github.com/google/osv-scanner
+# Documentation: https://google.github.io/osv-scanner/
+# CLI Reference: osv-scanner scan source --help
+#
+# COMPLETE LIST OF ALL CLI FLAGS (from osv-scanner scan source --help):
+# --lockfile, -L: scan package lockfile on this path
+# --sbom, -S: [DEPRECATED] scan sbom file on this path, the sbom file name must follow the relevant spec
+# --recursive, -r: check subdirectories
+# --no-ignore: also scan files that would be ignored by .gitignore
+# --include-git-root: include scanning git root (non-submoduled) repositories
+# --data-source: source to fetch package information from; value can be: deps.dev, native (default: "deps.dev")
+# --maven-registry: URL of the default registry to fetch Maven metadata
+# --config: set/override config file
+# --format, -f: sets the output format; value can be: table, html, vertical, json, markdown, sarif, gh-annotations, cyclonedx-1-4, cyclonedx-1-5, spdx-2-3 (default: "table")
+# --serve: output as HTML result and serve it locally
+# --port: port number to use when serving HTML report (default: 8000)
+# --output: saves the result to the given file path
+# --verbosity: specify the level of information that should be provided during runtime; value can be: error, warn, info (default: "info")
+# --offline: run in offline mode, disabling any features requiring network access
+# --offline-vulnerabilities: checks for vulnerabilities using local databases that are already cached
+# --download-offline-databases: downloads vulnerability databases for offline comparison
+# --call-analysis: attempt call analysis on code to detect only active vulnerabilities
+# --no-call-analysis: disables call graph analysis
+# --no-resolve: disable transitive dependency resolution of manifest files
+# --allow-no-lockfiles: has the scanner consider no lockfiles being found as ok
+# --all-packages: when json output is selected, prints all packages
+# --all-vulns: show all vulnerabilities including unimportant and uncalled ones
+# --licenses: report on licenses based on an allowlist
+# --experimental-flag-deprecated-packages: report if package versions are deprecated
+# --experimental-plugins: list of specific plugins and presets of plugins to use (default: "lockfile", "sbom", "directory")
+# --experimental-disable-plugins: list of specific plugins and presets of plugins to not use
+# --experimental-no-default-plugins: disable default plugins, instead using only those enabled by --experimental-plugins
+
+tool: osv-scanner
+enabled: true
+description: "Scans various mediums for dependencies and checks them against the OSV database"
+
+resource_profile:
+  tool_name: "osv-scanner"
+  memory_peak_mb: 1024
+  memory_avg_mb: 512
+  cpu_avg_percent: 70.0
+  expected_duration_seconds: 300
+  temp_space_mb: 500
+  success_rate: 0.98
+  sample_count: 10
+
+cli:
+  # COMMAND STRUCTURE
+  command: "scan"                         # Command to run (scan is default)
+  subcommand: "source"                    # Subcommand (source, image, sbom, etc.)
+
+  # INPUT SOURCES
+  directories: []                         # Directories to scan (positional arguments)
+  lockfile: []                            # scan package lockfile on this path
+  sbom: []                                # [DEPRECATED] scan sbom file on this path
+
+  # SCANNING OPTIONS
+  recursive: false                        # check subdirectories
+  no_ignore: false                        # also scan files that would be ignored by .gitignore
+  include_git_root: false                 # include scanning git root (non-submoduled) repositories
+
+  # DATA SOURCES
+  data_source: "deps.dev"                 # source to fetch package information from (deps.dev, native)
+  maven_registry: ""                      # URL of the default registry to fetch Maven metadata
+
+  # CONFIGURATION
+  config: ""                              # set/override config file
+
+  # OUTPUT OPTIONS
+  format: "json"                          # sets the output format (table, html, vertical, json, markdown, sarif, gh-annotations, cyclonedx-1-4, cyclonedx-1-5, spdx-2-3)
+  serve: false                            # output as HTML result and serve it locally
+  port: "8000"                            # port number to use when serving HTML report
+  output: ""                              # saves the result to the given file path
+
+  # VERBOSITY
+  verbosity: "info"                       # specify the level of information (error, warn, info)
+
+  # OFFLINE MODE
+  offline: false                          # run in offline mode, disabling network access
+  offline_vulnerabilities: false          # checks for vulnerabilities using local cached databases
+  download_offline_databases: false       # downloads vulnerability databases for offline comparison
+
+  # ANALYSIS OPTIONS
+  call_analysis: []                       # attempt call analysis on code to detect only active vulnerabilities
+  no_call_analysis: []                    # disables call graph analysis
+  no_resolve: false                       # disable transitive dependency resolution of manifest files
+
+  # BEHAVIOR OPTIONS
+  allow_no_lockfiles: true                # no lockfile in repo is OK (avoid exit 128 on empty scans)
+  all_packages: false                     # when json output is selected, prints all packages
+  all_vulns: false                        # show all vulnerabilities including unimportant and uncalled ones
+
+  # LICENSE SCANNING
+  licenses: ""                            # report on licenses based on an allowlist
+
+  # EXPERIMENTAL FEATURES
+  experimental_flag_deprecated_packages: false  # report if package versions are deprecated
+  experimental_plugins: []                # list of specific plugins and presets to use
+  experimental_disable_plugins: []        # list of specific plugins and presets to not use
+  experimental_no_default_plugins: false  # disable default plugins, use only enabled ones
+
+# Execution conditions
+conditions:
+  - type: "file_exists"
+    pattern: "."
+  - type: "is_git_repo"
+
+# Output parsing settings
+output_format: "json"
+error_indicators: ["vulnerability", "error", "failed"]
+success_indicators: ["success", "no vulnerabilities found"]

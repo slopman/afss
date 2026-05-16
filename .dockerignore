@@ -6,3 +6,8 @@ normalized
 FINDINGS_PROCESSOR_DESIGN.md
 RESOURCE_MANAGER_DESIGN.md
 *.json
+# Huge vendored tool trees — image installs its own CLIs
+tools
+audits
+bin
+results
