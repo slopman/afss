@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -171,6 +172,14 @@ func runScan(repoPath string, logger *logrus.Logger) {
 		return
 	}
 
+	scheduledToolNames := make([]string, 0, len(toolConfigs))
+	for name, cfg := range toolConfigs {
+		if cfg.Enabled {
+			scheduledToolNames = append(scheduledToolNames, name)
+		}
+	}
+	sort.Strings(scheduledToolNames)
+
 	// Results collection
 	var results []models.ToolResult
 	var mu sync.Mutex
@@ -282,7 +291,7 @@ func runScan(repoPath string, logger *logrus.Logger) {
 		saveFinalReport(finalFindings, correlations, logger)
 		
 		// 4. Generate HTML Report
-		generateHTMLReport(finalFindings, correlations, logger)
+		generateHTMLReport(finalFindings, correlations, scheduledToolNames, logger)
 	}
 
 	logger.Info("AFSS scan completed")

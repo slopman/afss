@@ -1,10 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -116,6 +118,27 @@ const reportTemplate = `
             </div>
         </div>
 
+        <h2>Findings by tool (this run)</h2>
+        <p style="color: #8b949e;">All tools that were scheduled for the scan. Count is after dedup/filter in the pipeline — zero means no actionable finding rows for that tool.</p>
+        <div style="overflow-x: auto; margin-bottom: 32px;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tool</th>
+                        <th>Count in report</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .ToolRows}}
+                    <tr>
+                        <td><span class="tag">{{.Name}}</span></td>
+                        <td>{{.Count}}</td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+
         <div class="charts-row">
             <div class="chart-container">
                 <h3>Severity Distribution</h3>
@@ -172,14 +195,14 @@ const reportTemplate = `
             options: { plugins: { legend: { position: 'bottom', labels: { color: '#c9d1d9' } } } }
         });
 
-        // Tool Chart
+        // Tool Chart (labels/data from one sorted pass — map range order is undefined in Go)
         new Chart(document.getElementById('toolChart'), {
             type: 'bar',
             data: {
-                labels: [{{range $name, $val := .ToolBreakdown}}'{{$name}}',{{end}}],
+                labels: {{.ToolChartLabelsJSON}},
                 datasets: [{
                     label: 'Findings',
-                    data: [{{range $name, $val := .ToolBreakdown}}{{$val}},{{end}}],
+                    data: {{.ToolChartDataJSON}},
                     backgroundColor: '#58a6ff'
                 }]
             },
@@ -196,6 +219,11 @@ const reportTemplate = `
 </html>
 `
 
+type ToolRow struct {
+	Name  string
+	Count int
+}
+
 type ReportData struct {
 	GeneratedAt   string
 	Findings      []findings_processor.NormalizedFinding
@@ -206,14 +234,22 @@ type ReportData struct {
 	LowCount      int
 	InfoCount     int
 	ToolBreakdown map[string]int
+	/** JSON arrays for Chart.js — safe embedding via template.JS */
+	ToolChartLabelsJSON template.JS
+	ToolChartDataJSON   template.JS
+	ToolRows            []ToolRow
 }
 
-func generateHTMLReport(findings []findings_processor.NormalizedFinding, correlations []findings_processor.Correlation, logger *logrus.Logger) {
+func generateHTMLReport(findings []findings_processor.NormalizedFinding, correlations []findings_processor.Correlation, scheduledTools []string, logger *logrus.Logger) {
 	data := ReportData{
 		GeneratedAt:   time.Now().Format("2006-01-02 15:04:05"),
 		Findings:      findings,
 		Correlations: correlations,
 		ToolBreakdown: make(map[string]int),
+	}
+
+	for _, t := range scheduledTools {
+		data.ToolBreakdown[t] = 0
 	}
 
 	for _, f := range findings {
@@ -231,6 +267,34 @@ func generateHTMLReport(findings []findings_processor.NormalizedFinding, correla
 		}
 		data.ToolBreakdown[f.Tool]++
 	}
+
+	chartKeys := make([]string, 0, len(data.ToolBreakdown))
+	for k := range data.ToolBreakdown {
+		chartKeys = append(chartKeys, k)
+	}
+	sort.Strings(chartKeys)
+	chartVals := make([]int, len(chartKeys))
+	for i, k := range chartKeys {
+		chartVals[i] = data.ToolBreakdown[k]
+	}
+	labelsJSON, err := json.Marshal(chartKeys)
+	if err != nil {
+		logger.Errorf("tool chart labels json: %v", err)
+		labelsJSON = []byte("[]")
+	}
+	dataJSON, err := json.Marshal(chartVals)
+	if err != nil {
+		logger.Errorf("tool chart data json: %v", err)
+		dataJSON = []byte("[]")
+	}
+	data.ToolChartLabelsJSON = template.JS(labelsJSON)
+	data.ToolChartDataJSON = template.JS(dataJSON)
+
+	toolRows := make([]ToolRow, len(chartKeys))
+	for i, k := range chartKeys {
+		toolRows[i] = ToolRow{Name: k, Count: chartVals[i]}
+	}
+	data.ToolRows = toolRows
 
 	funcMap := template.FuncMap{
 		"lower": func(s findings_processor.SeverityLevel) string {
